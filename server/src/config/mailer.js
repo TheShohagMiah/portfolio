@@ -13,6 +13,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+console.log(process.env.SMTP_USER_EMAIL)
+console.log(process.env.SMTP_USER_PASS)
 export const sendEmail = async (to, subject, html) => {
   await transporter.sendMail({
     from: `"Nothing website" <${process.env.SMTP_USER_EMAIL}>`,
