@@ -161,7 +161,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     await sendEmail(
       user.email,
       "Account Verified",
-      `<h1>Success!</h1><p>Hi ${user.FullName}, your account is now fully verified.</p>`,
+      `<h1>Success!</h1><p>Hi ${user.fullName}, your account is now fully verified.</p>`,
     );
   } catch (error) {
     // We don't throw an error here because the DB update was already successful
