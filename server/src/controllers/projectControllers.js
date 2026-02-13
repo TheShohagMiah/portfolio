@@ -1,6 +1,10 @@
 import Project from "../models/projects/projectModel.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 // @desc    Create New Project
 export const createProject = asyncHandler(async (req, res) => {
@@ -33,7 +37,7 @@ export const createProject = asyncHandler(async (req, res) => {
 
 // @desc    Get All Projects
 export const getAllProjects = asyncHandler(async (req, res) => {
-  const projects = await Project.find({}).sort({ order: 1 });
+  const projects = await Project.find({});
 
   res.status(200).json({
     success: true,

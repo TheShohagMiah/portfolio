@@ -17,7 +17,6 @@ const projectSchema = new mongoose.Schema(
     technologies: [{ type: String }],
     github: { type: String, default: "#" },
     live: { type: String, default: "#" },
-    order: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

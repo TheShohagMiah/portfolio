@@ -11,18 +11,23 @@ export const uploadOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
 
-    // Cloudinary-তে ফাইল আপলোড
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
-      folder: "portfolio_projects", // নির্দিষ্ট ফোল্ডারে সেভ হবে
+      folder: "portfolio_projects",
     });
-
-    // সফলভাবে আপলোড হলে লোকাল ফাইলটি ডিলিট করে দিন
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
-    // আপলোড ফেইল করলে টেম্পোরারি ফাইলটি সার্ভার থেকে সরিয়ে ফেলুন
     fs.unlinkSync(localFilePath);
     return null;
+  }
+};
+// Delete from Cloudinary
+export const deleteFromCloudinary = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to delete from Cloudinary: ${error.message}`);
   }
 };
