@@ -7,8 +7,10 @@ import { AdminThemeProvider } from "./contexts/ThemeContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <AdminThemeProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AdminThemeProvider>
   </StrictMode>,
 );

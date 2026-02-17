@@ -1,24 +1,19 @@
 import React from "react";
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
-import { AdminThemeProvider } from "./contexts/ThemeContext"; // Verify path
 import AdminLayout from "./layout/AdminLayout";
 import SignUp from "./pages/auth/SignUp";
 import SignIn from "./pages/auth/Signin";
 import OtpVerification from "./pages/auth/OtpVerification";
+import UpdateBioForm from "./pages/about/About";
+import AddService from "./pages/services/AddService";
+import AllServices from "./pages/services/AllServices";
+import Hero from "./pages/Hero/Hero";
 
 const App = () => {
   return (
-    <div className="selection:bg-primary selection:text-black">
+    <div className="">
       <Routes>
-        {/* --- Admin & Auth Scope --- */}
-        {/* We wrap both in the Provider so they share the same 'dark/light' state */}
-        <Route
-          element={
-            <AdminThemeProvider>
-              <Outlet />
-            </AdminThemeProvider>
-          }
-        >
+        <Route element={<Outlet />}>
           {/* Auth Routes (No Sidebar) */}
           <Route path="auth">
             <Route path="signup" element={<SignUp />} />
@@ -30,11 +25,13 @@ const App = () => {
           <Route path="admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<div>Dashboard Content</div>} />
-            <Route path="hero-management" element={<div>Hero Settings</div>} />
-            <Route path="about" element={<div>Personal Info</div>} />
+            <Route path="hero-management" element={<Hero />} />
+            <Route path="about" element={<UpdateBioForm />} />
             <Route path="skills" element={<div>Skills List</div>} />
             <Route path="works" element={<div>Project Gallery</div>} />
-            <Route path="services" element={<div>Services Overview</div>} />
+            <Route path="services" element={<AllServices />} />
+
+            <Route path="services/new" element={<AddService />} />
           </Route>
         </Route>
 

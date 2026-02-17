@@ -1,19 +1,16 @@
 import React, { useRef } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import { FiArrowUpRight, FiDownload, FiCode } from "react-icons/fi";
 
 const Hero = () => {
   const containerRef = useRef(null);
 
-  // Animation Variants
+  /* ─── Animation Variants ────────────────────────────────────────── */
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
-      },
+      transition: { staggerChildren: 0.2, delayChildren: 0.3 },
     },
   };
 
@@ -26,7 +23,7 @@ const Hero = () => {
     },
   };
 
-  // Particle/Star Generator Data
+  /* ─── Decorative element counts ─────────────────────────────────── */
   const bubbles = Array.from({ length: 6 });
   const stars = Array.from({ length: 12 });
 
@@ -36,17 +33,23 @@ const Hero = () => {
       id="hero"
       className="relative min-h-screen w-full overflow-hidden bg-background flex items-center justify-center antialiased"
     >
-      {/* --- Background Decorative Layer --- */}
+      {/* ── Background Decorative Layer ───────────────────────────── */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 [background-size:50px_50px] [background-image:linear-gradient(to_right,rgba(120,120,120,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(120,120,120,0.05)_1px,transparent_1px)] dark:[background-image:linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)]" />
+        {/* Grid Overlay — uses CSS vars so it respects light/dark automatically */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundSize: "50px 50px",
+            backgroundImage: `
+              linear-gradient(to right,  color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
+              linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px)
+            `,
+          }}
+        />
 
         {/* Main Center Glow */}
         <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1],
-          }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.07, 0.15, 0.07] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary rounded-full blur-[120px]"
         />
@@ -62,11 +65,7 @@ const Hero = () => {
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
-            animate={{
-              y: [0, -40, 0],
-              x: [0, 20, 0],
-              scale: [1, 1.1, 1],
-            }}
+            animate={{ y: [0, -40, 0], x: [0, 20, 0], scale: [1, 1.1, 1] }}
             transition={{
               duration: Math.random() * 5 + 5,
               repeat: Infinity,
@@ -84,10 +83,7 @@ const Hero = () => {
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
-            animate={{
-              opacity: [0, 1, 0],
-              scale: [0, 1.5, 0],
-            }}
+            animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
             transition={{
               duration: Math.random() * 3 + 2,
               repeat: Infinity,
@@ -97,7 +93,7 @@ const Hero = () => {
         ))}
       </div>
 
-      {/* --- Main Content --- */}
+      {/* ── Main Content ──────────────────────────────────────────── */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -110,11 +106,12 @@ const Hero = () => {
             variants={itemVariants}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border backdrop-blur-md mb-4"
           >
+            {/* Availability dot — accent color intentionally kept outside token system */}
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/70">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Available for new projects
             </span>
           </motion.div>
@@ -133,7 +130,7 @@ const Hero = () => {
                 whileInView={{ width: 32 }}
                 transition={{ delay: 1, duration: 0.8 }}
                 className="h-px bg-primary"
-              ></motion.span>
+              />
               <h2 className="text-lg md:text-2xl font-medium text-primary tracking-wide uppercase">
                 Full Stack Developer
               </h2>
@@ -142,7 +139,7 @@ const Hero = () => {
                 whileInView={{ width: 32 }}
                 transition={{ delay: 1, duration: 0.8 }}
                 className="h-px bg-primary"
-              ></motion.span>
+              />
             </div>
           </motion.div>
 
@@ -195,14 +192,16 @@ const Hero = () => {
               Tech Stack Spotlight
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-2xl text-muted-foreground/50">
-              <motion.div whileHover={{ color: "var(--primary)", rotate: 15 }}>
+              <motion.div
+                whileHover={{ color: "var(--color-primary)", rotate: 15 }}
+              >
                 <FiCode className="cursor-help" />
               </motion.div>
-              <span className="hidden sm:block h-6 w-px bg-border"></span>
-              {["React", "Next.js", "Node.js"].map((tech, i) => (
+              <span className="hidden sm:block h-6 w-px bg-border" />
+              {["React", "Next.js", "Node.js"].map((tech) => (
                 <motion.span
                   key={tech}
-                  whileHover={{ y: -5, color: "var(--foreground)" }}
+                  whileHover={{ y: -5, color: "var(--color-foreground)" }}
                   className="text-sm font-mono cursor-default px-2"
                 >
                   {tech}
@@ -213,7 +212,7 @@ const Hero = () => {
         </div>
       </motion.div>
 
-      {/* Scroll Indicator */}
+      {/* ── Scroll Indicator ──────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.4 }}

@@ -2,11 +2,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AdminThemeContext = createContext();
 
-export function AdminThemeProvider({ children }) {
+export const AdminThemeProvider = ({ children }) => {
   const [adminTheme, setAdminTheme] = useState(() => {
-    const stored = localStorage.getItem("adminTheme");
+    const stored = localStorage.getItem("AdminTheme");
     if (stored) return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
+    return window.matchMedia("(prefers-color-scheme:dark)").matches
       ? "dark"
       : "light";
   });
@@ -18,18 +18,18 @@ export function AdminThemeProvider({ children }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("adminTheme", adminTheme);
+    localStorage.setItem("AdminTheme", adminTheme);
   }, [adminTheme]);
 
-  const toggleadminTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const toggleAdminTheme = () => {
+    setAdminTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   return (
-    <AdminThemeContext.Provider value={{ adminTheme, toggleadminTheme }}>
+    <AdminThemeContext.Provider value={{ adminTheme, toggleAdminTheme }}>
       {children}
     </AdminThemeContext.Provider>
   );
-}
+};
 
-export const useadminTheme = () => useContext(AdminThemeContext);
+export const useAdminTheme = () => useContext(AdminThemeContext);
