@@ -12,26 +12,49 @@ import {
   FiChrome,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  // 1. Initialize React Hook Form
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
+    reset, // 3. Destructure reset to clear the form
     formState: { errors, isSubmitting },
   } = useForm({
-    mode: "onBlur", // Validates when user leaves the input
-    // resolver: zodResolver(yourSchema) <-- Add this later
+    mode: "onBlur",
+    // resolver: zodResolver(registerSchema), // Highly recommended to add this!
   });
 
   const onSubmit = async (data) => {
-    console.log("Form Data:", data);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  };
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        data,
+        { withCredentials: true },
+      );
 
+      if (response.data?.success) {
+        toast.success(response.data.message || "OTP sent to your email!");
+
+        // 4. Clear the form fields
+        reset();
+
+        // 5. Redirect to the OTP page after a slight delay
+        // We pass the email in 'state' so the OTP page knows who to verify
+        setTimeout(() => {
+          navigate("/auth/verify-account", { state: { email: data.email } });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Registration Error:", error.response?.data);
+      const backendMessage = error.response?.data?.message;
+      toast.error(backendMessage || "Registration failed");
+    }
+  };
   // Tracking mouse for the ambient glow effect
   const handleMouseMove = (e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -40,7 +63,7 @@ const SignUp = () => {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4 selection:bg-primary selection:text-black overflow-hidden"
+      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4  overflow-hidden"
     >
       {/* --- Dynamic Background Effects --- */}
       <div className="fixed inset-0 pointer-events-none">
@@ -103,14 +126,14 @@ const SignUp = () => {
               {/* Full Name */}
               <div className="space-y-2">
                 <Label>Full Name</Label>
-                <InputWrapper icon={<FiUser />} error={errors.name}>
+                <InputWrapper icon={<FiUser />} error={errors.fullName}>
                   <input
-                    {...register("name")}
+                    {...register("fullName")}
                     placeholder="Shohag Miah"
                     className="input-base"
                   />
                 </InputWrapper>
-                <ErrorMessage message={errors.name?.message} />
+                <ErrorMessage message={errors.fullName?.message} />
               </div>
 
               {/* Email */}
@@ -170,7 +193,7 @@ const SignUp = () => {
                 whileHover={{ scale: 1.01, y: -2 }}
                 whileTap={{ scale: 0.99 }}
                 disabled={isSubmitting}
-                className="w-full bg-primary hover:bg-primary/90 text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                className="w-full bg-background hover:bg-background/90 text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />

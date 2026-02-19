@@ -12,9 +12,11 @@ export const addOrUpdateHero = asyncHandler(async (req, res) => {
       title,
       subTitle,
       description,
+      freelancerStatus,
       ctaText,
       ctaLink,
-      socialLinks,
+      downloadText,
+      downloadLink,
     },
     { new: true, upsert: true, runValidators: true },
   );

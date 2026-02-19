@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiAlertCircle } from "react-icons/fi";
 
 const fieldItem = {
   hidden: { opacity: 0, y: 16 },

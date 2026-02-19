@@ -4,6 +4,7 @@ import { Field } from "../../components/shared/InputField";
 import { useForm } from "react-hook-form";
 import { FiSave } from "react-icons/fi";
 import { LuLoader } from "react-icons/lu";
+import axios from "axios";
 
 /* ─── Animation Variants ──────────────────────────────────────────── */
 const fadeInRight = {
@@ -30,9 +31,20 @@ const Hero = () => {
     formState: { errors, isSubmitting, isSubmitSuccessful, isDirty },
   } = useForm();
   const description = watch("description", "");
+
   const onSubmit = async (data) => {
-    await new Promise((r) => setTimeout(r, 1200));
-    console.log("Bio updated:", data);
+    try {
+      const response = await axios.patch(
+        "http://localhost:5000/api/hero/update",
+        data,
+      );
+
+      if (response.status === 200) {
+        console.log("Doing work", response.data);
+      }
+    } catch (error) {
+      console.error("Not working", error.response?.data || error.message);
+    }
   };
 
   return (
@@ -94,11 +106,11 @@ const Hero = () => {
                 <Field
                   label="Freelance Status"
                   required
-                  error={errors.freelance?.message}
+                  error={errors.freelanceStatus?.message}
                 >
                   <select
-                    {...register("freelance", { required: true })}
-                    className={`${inputCls(!!errors.freelance)} appearance-none cursor-pointer`}
+                    {...register("freelanceStatus", { required: true })}
+                    className={`${inputCls(!!errors.freelanceStatus)} appearance-none cursor-pointer`}
                   >
                     <option value="available">Available</option>
                     <option value="busy">Busy</option>
@@ -140,29 +152,29 @@ const Hero = () => {
                   <Field
                     label="View works text"
                     required
-                    error={errors.location?.message}
+                    error={errors.ctaText?.message}
                   >
                     <input
-                      {...register("location", {
+                      {...register("ctaText", {
                         required: "View works text is required",
                       })}
                       placeholder="View works"
-                      className={inputCls(!!errors.location)}
+                      className={inputCls(!!errors.ctaText)}
                     />
                   </Field>
 
                   <Field
                     label="View works link"
                     required
-                    error={errors.experience?.message}
+                    error={errors.ctaLink?.message}
                   >
                     <input
-                      {...register("experience", {
+                      {...register("ctaLink", {
                         required: "Experience is required",
                         min: { value: 0, message: "Must be 0 or more" },
                       })}
                       placeholder="https://shohagmiah.com/projects"
-                      className={inputCls(!!errors.experience)}
+                      className={inputCls(!!errors.ctaLink)}
                     />
                   </Field>
                 </div>
@@ -170,29 +182,29 @@ const Hero = () => {
                   <Field
                     label="Download cv Text"
                     required
-                    error={errors.location?.message}
+                    error={errors.downloadText?.message}
                   >
                     <input
-                      {...register("location", {
+                      {...register("downloadText", {
                         required: "Location is required",
                       })}
                       placeholder="Download cv"
-                      className={inputCls(!!errors.location)}
+                      className={inputCls(!!errors.downloadText)}
                     />
                   </Field>
 
                   <Field
                     label="Download cv link"
                     required
-                    error={errors.experience?.message}
+                    error={errors.downloadLink?.message}
                   >
                     <input
-                      {...register("experience", {
+                      {...register("downloadLink", {
                         required: "Experience is required",
                         min: { value: 0, message: "Must be 0 or more" },
                       })}
                       placeholder="https://shohagmiah.com"
-                      className={inputCls(!!errors.experience)}
+                      className={inputCls(!!errors.downloadLink)}
                     />
                   </Field>
                 </div>

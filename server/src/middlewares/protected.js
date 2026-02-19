@@ -9,7 +9,7 @@ export const Protected = asyncHandler(async (req, res, next) => {
   const { token } = req.cookies;
 
   if (!token) {
-    throw new ApiError(401, "Authentication required. Please login.");
+    throw new ApiError(401, "Authentication required. No token found.");
   }
 
   try {

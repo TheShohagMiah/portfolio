@@ -8,7 +8,7 @@ import { isAdmin } from "../middlewares/isAdmin.js";
 const heroRouter = Router();
 
 heroRouter.get("/", getHero);
-heroRouter.put(
+heroRouter.patch(
   "/update",
   Protected,
   isAdmin,

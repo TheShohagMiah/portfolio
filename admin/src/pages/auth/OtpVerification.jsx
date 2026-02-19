@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiShield, FiArrowRight, FiRefreshCw } from "react-icons/fi";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const OtpVerification = () => {
   const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -33,10 +35,19 @@ const OtpVerification = () => {
     }
   };
 
-  const handleSubmit = () => {
-    const code = otp.join("");
-    console.log("Verifying OTP:", code);
-    // Add your API call logic here
+  const handleSubmit = async (data) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/verify-account",
+      );
+      if (response) {
+        toast.success(
+          response.data.message || "Your account has been activated.",
+        );
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message);
+    }
   };
 
   return (
@@ -69,6 +80,7 @@ const OtpVerification = () => {
               key={index}
               type="text"
               maxLength="1"
+              name="otp"
               ref={(el) => (inputRefs.current[index] = el)}
               value={data}
               onChange={(e) => handleChange(e.target, index)}

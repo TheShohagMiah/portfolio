@@ -8,10 +8,12 @@ import UpdateBioForm from "./pages/about/About";
 import AddService from "./pages/services/AddService";
 import AllServices from "./pages/services/AllServices";
 import Hero from "./pages/Hero/Hero";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   return (
     <div className="">
+      <Toaster />
       <Routes>
         <Route element={<Outlet />}>
           {/* Auth Routes (No Sidebar) */}
