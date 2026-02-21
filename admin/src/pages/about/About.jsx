@@ -22,13 +22,13 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
-/* ─── Input base classes ──────────────────────────────────────────── */
+/* ─── Input base classes (Color Refinement) ─────────────────────── */
 export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl bg-muted border text-sm text-foreground
+  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
    placeholder:text-muted-foreground
-   focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
+   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
    transition-all duration-200
-   ${hasError ? "border-destructive" : "border-border hover:border-ring/50"}`;
+   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
 
 /* ─── UpdateBioForm ───────────────────────────────────────────────── */
 const UpdateBioForm = () => {
@@ -91,21 +91,21 @@ const UpdateBioForm = () => {
           </p>
         </motion.div>
 
-        {/* ── Success Banner ──────────────────────────────────────── */}
+        {/* ── Success Banner (Color Refinement) ───────────────────── */}
         <AnimatePresence>
           {isSubmitSuccessful && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-8 flex items-center gap-3 px-5 py-4 rounded-2xl bg-card border border-border text-sm font-medium"
+              className="mb-8 flex items-center gap-3 px-5 py-4 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium"
             >
               <FiCheckCircle className="text-primary flex-shrink-0" size={18} />
               <span className="text-foreground">
                 Bio updated successfully —{" "}
                 <button
                   onClick={() => reset()}
-                  className="text-primary underline underline-offset-2 hover:no-underline"
+                  className="text-primary font-bold underline underline-offset-4 hover:opacity-80"
                 >
                   make another edit
                 </button>
@@ -125,7 +125,7 @@ const UpdateBioForm = () => {
             <motion.div variants={fadeInRight} className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <FiUser size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
                   Identity
                 </h2>
               </div>
@@ -183,7 +183,7 @@ const UpdateBioForm = () => {
             <motion.div variants={fadeInRight} className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <FiMapPin size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
                   Location & Stats
                 </h2>
               </div>
@@ -228,7 +228,7 @@ const UpdateBioForm = () => {
             <motion.div variants={fadeInRight} className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <FiBriefcase size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
                   Bio Content
                 </h2>
               </div>
@@ -278,7 +278,7 @@ const UpdateBioForm = () => {
             <motion.div variants={fadeInRight} className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <span className="text-primary text-xs font-bold">{"</>"}</span>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
                   Social Links
                 </h2>
               </div>
@@ -323,16 +323,21 @@ const UpdateBioForm = () => {
               variants={fadeInRight}
               className="flex items-center justify-between pt-4 border-t border-border"
             >
-              <p className="text-xs text-muted-foreground font-mono">
-                {isDirty ? "● Unsaved changes" : "✓ All saved"}
-              </p>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${isDirty ? "bg-primary animate-pulse" : "bg-muted-foreground/30"}`}
+                />
+                <p className="text-[10px] uppercase font-bold tracking-tighter text-muted-foreground">
+                  {isDirty ? "Unsaved changes" : "All changes saved"}
+                </p>
+              </div>
 
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => reset()}
                   disabled={!isDirty || isSubmitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 disabled:opacity-0"
                 >
                   Discard
                 </button>
@@ -342,7 +347,7 @@ const UpdateBioForm = () => {
                   disabled={isSubmitting}
                   whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
                   whileTap={{ scale: isSubmitting ? 1 : 0.97 }}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all duration-200 disabled:opacity-60 disabled:grayscale shadow-lg shadow-primary/10"
                 >
                   {isSubmitting ? (
                     <>

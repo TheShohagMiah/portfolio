@@ -17,7 +17,7 @@ export const Field = ({
 }) => (
   <motion.div className="space-y-2">
     <div className="flex items-baseline justify-between">
-      <label className="text-sm font-semibold text-foreground uppercase tracking-widest">
+      <label className="text-xs font-medium text-foreground uppercase tracking-widest">
         {label}
         {required && <span className="text-destructive ml-0.5">*</span>}
       </label>

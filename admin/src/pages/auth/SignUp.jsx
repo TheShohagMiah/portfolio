@@ -15,6 +15,16 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { Field } from "../../components/shared/InputField";
+import SocialButton from "../../components/shared/SocialButton";
+
+/* ─── Input base classes (Color Refined) ─────────────────────────── */
+export const inputCls = (hasError) =>
+  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
+   placeholder:text-muted-foreground
+   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+   transition-all duration-200
+   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
 
 const SignUp = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -22,7 +32,7 @@ const SignUp = () => {
   const {
     register,
     handleSubmit,
-    reset, // 3. Destructure reset to clear the form
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     mode: "onBlur",
@@ -39,12 +49,8 @@ const SignUp = () => {
 
       if (response.data?.success) {
         toast.success(response.data.message || "OTP sent to your email!");
-
-        // 4. Clear the form fields
         reset();
 
-        // 5. Redirect to the OTP page after a slight delay
-        // We pass the email in 'state' so the OTP page knows who to verify
         setTimeout(() => {
           navigate("/auth/verify-account", { state: { email: data.email } });
         }, 1500);
@@ -124,76 +130,68 @@ const SignUp = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               {/* Full Name */}
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <InputWrapper icon={<FiUser />} error={errors.fullName}>
-                  <input
-                    {...register("fullName")}
-                    placeholder="Shohag Miah"
-                    className="input-base"
-                  />
-                </InputWrapper>
-                <ErrorMessage message={errors.fullName?.message} />
-              </div>
+              <Field
+                label="Full Name"
+                required
+                error={errors.fullName?.message}
+              >
+                <input
+                  {...register("fullName", {
+                    required: "Download text ",
+                  })}
+                  placeholder="Full Name"
+                  className={inputCls(!!errors.fullName)}
+                />
+              </Field>
 
               {/* Email */}
-              <div className="space-y-2">
-                <Label>Email Address</Label>
-                <InputWrapper icon={<FiMail />} error={errors.email}>
-                  <input
-                    {...register("email")}
-                    type="email"
-                    placeholder="shohag@example.com"
-                    className="input-base"
-                  />
-                </InputWrapper>
-                <ErrorMessage message={errors.email?.message} />
-              </div>
+              <Field label="Email" required error={errors.email?.message}>
+                <input
+                  {...register("email", {
+                    required: "Download text is required",
+                  })}
+                  placeholder="Enter your email"
+                  className={inputCls(!!errors.email)}
+                />
+              </Field>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Password */}
-              <div className="space-y-2">
-                <Label>Password</Label>
-                <InputWrapper icon={<FiLock />} error={errors.password}>
-                  <input
-                    {...register("password")}
-                    type="password"
-                    placeholder="••••••••"
-                    className="input-base"
-                  />
-                </InputWrapper>
-              </div>
+              <Field label="Password" required error={errors.password?.message}>
+                <input
+                  {...register("password", {
+                    required: "Download text is required",
+                  })}
+                  type="password"
+                  placeholder="******"
+                  className={inputCls(!!errors.password)}
+                />
+              </Field>
 
               {/* Confirm Password */}
-              <div className="space-y-2">
-                <Label>Confirm</Label>
-                <InputWrapper
-                  icon={<FiShield />}
-                  error={errors.confirmPassword}
-                >
-                  <input
-                    {...register("confirmPassword")}
-                    type="password"
-                    placeholder="••••••••"
-                    className="input-base"
-                  />
-                </InputWrapper>
-              </div>
+              <Field
+                label="Confirm Password"
+                required
+                error={errors.password?.message}
+              >
+                <input
+                  {...register("confirmPassword", {
+                    required: "Download text is required",
+                  })}
+                  type="password"
+                  placeholder="******"
+                  className={inputCls(!!errors.confirmPassword)}
+                />
+              </Field>
             </div>
-
-            <ErrorMessage
-              message={
-                errors.password?.message || errors.confirmPassword?.message
-              }
-            />
 
             <div className="pt-4 space-y-6">
               <motion.button
                 whileHover={{ scale: 1.01, y: -2 }}
                 whileTap={{ scale: 0.99 }}
                 disabled={isSubmitting}
-                className="w-full bg-background hover:bg-background/90 text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                className="w-full bg-logo text-white hover:bg-background/90 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
@@ -249,39 +247,6 @@ const SignUp = () => {
     </div>
   );
 };
-
-// --- SUB-COMPONENTS ---
-
-const Label = ({ children }) => (
-  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">
-    {children}
-  </label>
-);
-
-const InputWrapper = ({ children, icon, error }) => (
-  <div
-    className={`relative group border rounded-2xl transition-all duration-300 ${
-      error
-        ? "border-red-500/50 bg-red-500/5"
-        : "border-white/5 bg-white/[0.03] focus-within:border-primary/50 focus-within:bg-white/[0.06]"
-    }`}
-  >
-    <div
-      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-        error ? "text-red-500" : "text-gray-600 group-focus-within:text-primary"
-      }`}
-    >
-      {icon}
-    </div>
-    {children}
-  </div>
-);
-
-const SocialButton = ({ icon, label }) => (
-  <button className="flex items-center justify-center gap-2 bg-white/[0.03] border border-white/5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-white/[0.08] hover:border-white/10 transition-all active:scale-95">
-    {icon} {label}
-  </button>
-);
 
 const ErrorMessage = ({ message }) => (
   <AnimatePresence>

@@ -11,23 +11,55 @@ import {
   FiEye,
   FiEyeOff,
 } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import SocialButton from "../../components/shared/SocialButton";
+import { Field } from "../../components/shared/InputField";
+import toast from "react-hot-toast";
+import axios from "axios";
+/* ─── Input base classes (Color Refined) ─────────────────────────── */
+export const inputCls = (hasError) =>
+  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
+   placeholder:text-muted-foreground
+   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+   transition-all duration-200
+   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
 
 const SignIn = () => {
+  const navigate = useNavigate();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     mode: "onBlur",
+    // resolver: zodResolver(registerSchema), // Highly recommended to add this!
   });
 
   const onSubmit = async (data) => {
-    console.log("Sign In Data:", data);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        data,
+        { withCredentials: true },
+      );
+      console.log(data);
+      if (response.data?.success) {
+        toast.success(response.data.message || "Login successfully");
+        reset();
+
+        setTimeout(() => {
+          navigate("/admin/dashboard", { state: { email: data.email } });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Registration Error:", error.response?.data);
+      const backendMessage = error.response?.data?.message;
+      toast.error(backendMessage || "Login failed");
+    }
   };
 
   const handleMouseMove = (e) => {
@@ -74,48 +106,27 @@ const SignIn = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <InputWrapper icon={<FiMail />} error={errors.email}>
-                <input
-                  {...register("email")}
-                  type="email"
-                  placeholder="name@domain.com"
-                  className="input-base"
-                />
-              </InputWrapper>
-              <ErrorMessage message={errors.email?.message} />
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <Label>Password</Label>
-                <a
-                  href="#"
-                  className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider"
-                >
-                  Forgot?
-                </a>
-              </div>
-              <InputWrapper icon={<FiLock />} error={errors.password}>
-                <input
-                  {...register("password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="input-base"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
-              </InputWrapper>
-              <ErrorMessage message={errors.password?.message} />
-            </div>
+            {/* Email */}
+            <Field label="Email" required error={errors.email?.message}>
+              <input
+                {...register("email", {
+                  required: "Email is required",
+                })}
+                placeholder="Enter your email"
+                className={inputCls(!!errors.email)}
+              />
+            </Field>
+            {/* Password */}
+            <Field label="Password" required error={errors.password?.message}>
+              <input
+                {...register("password", {
+                  required: "Password is required",
+                })}
+                type="password"
+                placeholder="******"
+                className={inputCls(!!errors.password)}
+              />
+            </Field>
 
             <motion.button
               whileHover={{ scale: 1.01 }}
@@ -180,39 +191,6 @@ const SignIn = () => {
     </div>
   );
 };
-
-// --- SUB-COMPONENTS ---
-
-const Label = ({ children }) => (
-  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">
-    {children}
-  </label>
-);
-
-const InputWrapper = ({ children, icon, error }) => (
-  <div
-    className={`relative group border rounded-2xl transition-all duration-300 ${
-      error
-        ? "border-red-500/50 bg-red-500/5"
-        : "border-white/5 bg-white/[0.03] focus-within:border-white/20 focus-within:bg-white/[0.06]"
-    }`}
-  >
-    <div
-      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-        error ? "text-red-500" : "text-gray-600 group-focus-within:text-white"
-      }`}
-    >
-      {icon}
-    </div>
-    {children}
-  </div>
-);
-
-const SocialButton = ({ icon, label }) => (
-  <button className="flex items-center justify-center gap-2 bg-white/[0.03] border border-white/5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-95">
-    {icon} {label}
-  </button>
-);
 
 const ErrorMessage = ({ message }) => (
   <AnimatePresence>

@@ -133,6 +133,10 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { otp } = req.body;
 
+  if (!otp) {
+    throw new ApiError(400, "OTP is required");
+  }
+
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -141,36 +145,48 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   if (user.isVerified) {
     return res.status(200).json({
       success: true,
-      message: "User is already verified. Please login.",
+      message: "Account already verified. Please login.",
     });
   }
 
-  // Validate OTP
-  if (user.otp !== Number(otp) || user.otpExpiryDate < Date.now()) {
-    throw new ApiError(400, "Invalid or expired OTP");
+  // 1. Check Expiry first
+  if (user.otpExpiryDate < Date.now()) {
+    throw new ApiError(400, "OTP has expired. Please request a new one.");
   }
 
-  // Mark as verified
+  // 2. Validate OTP (String comparison to handle leading zeros)
+  // Ensure your Schema stores OTP as a String
+  if (user.otp !== String(otp)) {
+    // Optional: Increment failed attempts here
+    throw new ApiError(400, "Invalid verification code");
+  }
+
+  // 3. Update User State
   user.isVerified = true;
-  user.otp = null;
-  user.otpExpiryDate = null;
+  user.otp = undefined; // Using undefined removes the field in MongoDB
+  user.otpExpiryDate = undefined;
+
   await user.save();
 
-  // Send Confirmation Email
+  // 4. Background Tasks (Email)
+  // We use a separate try-catch so email failure doesn't roll back verification
   try {
     await sendEmail(
       user.email,
-      "Account Verified",
-      `<h1>Success!</h1><p>Hi ${user.fullName}, your account is now fully verified.</p>`,
+      "Welcome to the Platform!",
+      `<h1>Verified!</h1><p>Hi ${user.fullName}, your account is now active.</p>`,
     );
   } catch (error) {
-    // We don't throw an error here because the DB update was already successful
-    console.error("Confirmation email failed to send:", error);
+    console.error("Post-verification email failed:", error.message);
   }
 
   res.status(200).json({
     success: true,
     message: "Email verified successfully!",
-    user: { id: user._id, name: user.name, email: user.email },
+    user: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+    },
   });
 });
