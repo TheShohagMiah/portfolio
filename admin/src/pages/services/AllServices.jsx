@@ -8,7 +8,7 @@ import {
   FiSearch,
   FiAlertTriangle,
   FiCheckCircle,
-  FiMoreVertical,
+  FiChevronRight,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
@@ -17,21 +17,22 @@ const INITIAL_SERVICES = [
   {
     id: 1,
     title: "Frontend Development",
-    description: "Crafting visually stunning interfaces...",
+    description: "Crafting visually stunning interfaces with high performance.",
     icon: "FiLayout",
     tags: ["React", "Next.js"],
   },
   {
     id: 2,
     title: "Backend Architecture",
-    description: "Designing scalable server-side logic...",
+    description: "Designing scalable server-side logic and database schemas.",
     icon: "FiServer",
     tags: ["Node.js", "Express"],
   },
   {
     id: 3,
     title: "Full Stack Solutions",
-    description: "End-to-end product development...",
+    description:
+      "End-to-end product development from wireframes to deployment.",
     icon: "FiLayers",
     tags: ["MERN Stack"],
   },
@@ -63,176 +64,183 @@ const AllServices = () => {
   };
 
   return (
-    <section className="py-10 bg-background min-h-screen">
-      <div className="container mx-auto px-6">
-        <div className="max-w-7xl mx-auto">
-          {/* ── Header ────────────────────────────────────────────── */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">
-                Service{" "}
-                <span className="text-muted-foreground italic serif">
-                  Management
-                </span>
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage and update your service offerings
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search services..."
-                  className="pl-10 pr-4 py-2 rounded-xl bg-card border border-border text-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all"
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <Link
-                to="/admin/services/new"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-all shadow-sm"
-              >
-                <FiPlus /> New Service
-              </Link>
-            </div>
+    <section className="py-8 min-h-screen text-foreground transition-colors duration-500">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* ── Header ────────────────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tighter">
+              Service{" "}
+              <span className="text-muted-foreground italic font-serif">
+                Inventory.
+              </span>
+            </h1>
+            <p className="text-muted-foreground text-sm mt-2 font-sans">
+              Browse and maintain your professional service offerings.
+            </p>
           </div>
 
-          {/* ── Toast ─────────────────────────────────────────────── */}
-          <AnimatePresence>
-            {deletedTitle && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3 text-sm font-medium text-primary"
-              >
-                <FiCheckCircle /> Service "{deletedTitle}" removed.
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* ── Table Container ───────────────────────────────────── */}
-          <div className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Service
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                      Description
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Tech Stack
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {filtered.map((service) => (
-                    <tr
-                      key={service.id}
-                      className="group hover:bg-muted/20 transition-colors"
-                    >
-                      {/* Service Info */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-primary text-lg group-hover:bg-primary group-hover:text-white transition-all">
-                            <IconRenderer name={service.icon} />
-                          </div>
-                          <span className="font-bold text-sm text-foreground">
-                            {service.title}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Description */}
-                      <td className="px-6 py-4 hidden md:table-cell">
-                        <p className="text-xs text-muted-foreground line-clamp-1 max-w-[250px]">
-                          {service.description}
-                        </p>
-                      </td>
-
-                      {/* Tech Stack */}
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {service.tags.map((tag, i) => (
-                            <span
-                              key={i}
-                              className="text-[9px] font-bold bg-secondary px-2 py-0.5 rounded-md text-muted-foreground uppercase"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            to={`/admin/services/edit/${service.id}`}
-                            className="p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                          >
-                            <FiEdit2 size={14} />
-                          </Link>
-                          <button
-                            onClick={() => setToDelete(service)}
-                            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <FiTrash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {filtered.length === 0 && (
-                <div className="py-20 text-center text-muted-foreground text-sm">
-                  No services found matching your search.
-                </div>
-              )}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="Search catalog..."
+                className="pl-11 pr-4 py-3 rounded-2xl bg-secondary border border-border text-sm text-foreground focus:outline-none focus:border-primary/50 w-64 transition-all shadow-sm"
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
+            <Link
+              to="/admin/services/new"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-all shadow-lg active:scale-95"
+            >
+              <FiPlus /> New Service
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Toast Notification ────────────────────────────────────── */}
+        <AnimatePresence>
+          {deletedTitle && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8"
+            >
+              <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-chart-5/10 border border-chart-5/20 text-chart-5">
+                <FiCheckCircle size={18} />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  Protocol Terminated: {deletedTitle}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Data Table: The Vault ──────────────────────────────────── */}
+        <div className="bg-card border border-border rounded-[2.5rem] overflow-hidden shadow-xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Service Module
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground hidden md:table-cell">
+                    Insight
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Tech Stack
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map((service) => (
+                  <tr
+                    key={service.id}
+                    className="group hover:bg-secondary/20 transition-colors"
+                  >
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all">
+                          <IconRenderer
+                            name={service.icon}
+                            className="text-xl"
+                          />
+                        </div>
+                        <span className="font-bold text-sm group-hover:italic transition-all">
+                          {service.title}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 hidden md:table-cell">
+                      <p className="text-xs text-muted-foreground line-clamp-1 max-w-[280px] font-sans">
+                        {service.description}
+                      </p>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-wrap gap-2">
+                        {service.tags.map((tag, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg bg-secondary text-[10px] font-bold text-muted-foreground border border-border uppercase tracking-tighter"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          to={`/admin/services/edit/${service.id}`}
+                          className="p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-all shadow-sm"
+                        >
+                          <FiEdit2 size={14} />
+                        </Link>
+                        <button
+                          onClick={() => setToDelete(service)}
+                          className="p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all shadow-sm"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {filtered.length === 0 && (
+              <div className="py-24 text-center">
+                <p className="text-muted-foreground text-xs italic font-mono tracking-widest">
+                  // No matching records found in the service vault.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Delete Modal ─────────────────────────────────────────── */}
+      {/* ── Delete Confirmation Overlay ────────────────────────────── */}
       <AnimatePresence>
         {toDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xl p-4">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-card border border-border rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-[3rem] p-10 max-w-sm w-full shadow-2xl"
             >
-              <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive mb-4">
-                <FiAlertTriangle size={24} />
+              <div className="w-16 h-16 rounded-[1.5rem] bg-destructive/10 flex items-center justify-center text-destructive mb-6">
+                <FiAlertTriangle size={32} />
               </div>
-              <h3 className="text-lg font-bold mb-2">Delete this service?</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                This will permanently remove "{toDelete.title}" from your
-                portfolio.
+              <h3 className="text-2xl font-bold mb-2 tracking-tighter">
+                Confirm Erasure
+              </h3>
+              <p className="text-sm text-muted-foreground mb-8 leading-relaxed font-sans">
+                You are removing{" "}
+                <span className="text-foreground font-bold">
+                  "{toDelete.title}"
+                </span>
+                . This will immediately affect your live site portfolio.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <button
                   onClick={() => setToDelete(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-border font-semibold text-sm"
+                  className="flex-1 py-4 rounded-2xl bg-secondary text-foreground font-bold text-[10px] uppercase tracking-widest hover:bg-muted transition-all border border-border"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 py-2.5 rounded-xl bg-destructive text-white font-semibold text-sm"
+                  className="flex-1 py-4 rounded-2xl bg-destructive text-white font-bold text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
                 >
-                  Delete
+                  Confirm
                 </button>
               </div>
             </motion.div>

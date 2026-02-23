@@ -9,6 +9,11 @@ import AddService from "./pages/services/AddService";
 import AllServices from "./pages/services/AllServices";
 import Hero from "./pages/Hero/Hero";
 import { Toaster } from "react-hot-toast";
+import AllProjects from "./pages/project/AllProjects";
+import AddProject from "./pages/project/AddProject";
+import Dashboard from "./pages/dashboard/Dashboard";
+import ContactManagement from "./pages/contact/Contact";
+import AddSkill from "./pages/skills/AddSkill";
 
 const App = () => {
   return (
@@ -26,14 +31,16 @@ const App = () => {
           {/* Dashboard Routes (With AdminLayout Sidebar/Nav) */}
           <Route path="admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<div>Dashboard Content</div>} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="hero-management" element={<Hero />} />
             <Route path="about" element={<UpdateBioForm />} />
             <Route path="skills" element={<div>Skills List</div>} />
-            <Route path="works" element={<div>Project Gallery</div>} />
+            <Route path="skills/new" element={<AddSkill />} />
+            <Route path="projects" element={<AllProjects />} />
+            <Route path="projects/new" element={<AddProject />} />
             <Route path="services" element={<AllServices />} />
-
             <Route path="services/new" element={<AddService />} />
+            <Route path="contact" element={<ContactManagement />} />
           </Route>
         </Route>
 

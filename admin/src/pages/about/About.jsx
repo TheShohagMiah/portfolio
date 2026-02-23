@@ -7,30 +7,19 @@ import {
   FiBriefcase,
   FiSave,
   FiCheckCircle,
+  FiGlobe,
+  FiLinkedin,
+  FiGithub,
+  FiTerminal,
 } from "react-icons/fi";
 import { LuLoader } from "react-icons/lu";
-import { Field } from "../../components/shared/InputField";
 
-/* ─── Animation Variants ──────────────────────────────────────────── */
-const fadeInRight = {
-  hidden: { opacity: 0, x: -30 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
-
-/* ─── Input base classes (Color Refinement) ─────────────────────── */
+/* ─── Themed Input Styling ────────────────────────────────────────── */
 export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
-   placeholder:text-muted-foreground
-   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-   transition-all duration-200
-   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
+  `w-full bg-secondary border rounded-2xl py-3 px-4 text-sm text-foreground 
+   placeholder:text-muted-foreground focus:outline-none transition-all
+   ${hasError ? "border-destructive/50" : "border-border focus:border-primary/50 shadow-sm"}`;
 
-/* ─── UpdateBioForm ───────────────────────────────────────────────── */
 const UpdateBioForm = () => {
   const {
     register,
@@ -60,310 +49,230 @@ const UpdateBioForm = () => {
   const shortBio = watch("shortBio", "");
 
   const onSubmit = async (data) => {
-    await new Promise((r) => setTimeout(r, 1200));
+    // Artificial delay for that "Saving to Vault" feeling
+    await new Promise((r) => setTimeout(r, 1500));
     console.log("Bio updated:", data);
   };
 
   return (
-    <section className="py-10 bg-background min-h-screen">
+    <section className="py-8 min-h-screen text-foreground transition-colors duration-500">
       <div className="max-w-4xl mx-auto px-6">
-        {/* ── Page Header ─────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-12"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <span className="h-[2px] w-12 bg-primary" />
-            <span className="text-primary font-bold uppercase tracking-widest text-xs">
-              Admin Panel
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            Update{" "}
+        {/* ── Header ────────────────────────────────────────────────── */}
+        <header className="mb-12">
+          <h1 className="text-4xl font-bold tracking-tighter">
+            Edit{" "}
             <span className="text-muted-foreground italic font-serif">
-              Bio.
+              Identity.
             </span>
           </h1>
-          <p className="mt-3 text-muted-foreground text-base">
-            Changes will be reflected live on your portfolio.
+          <p className="text-muted-foreground text-sm mt-2 font-sans">
+            Curate your professional narrative and contact touchpoints.
           </p>
-        </motion.div>
+        </header>
 
-        {/* ── Success Banner (Color Refinement) ───────────────────── */}
+        {/* ── Success Banner ────────────────────────────────────────── */}
         <AnimatePresence>
           {isSubmitSuccessful && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mb-8 flex items-center gap-3 px-5 py-4 rounded-2xl bg-primary/5 border border-primary/20 text-sm font-medium"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="mb-8 flex items-center gap-3 px-6 py-4 rounded-2xl bg-chart-2/10 border border-chart-2/20 text-chart-2 shadow-lg shadow-chart-2/5"
             >
-              <FiCheckCircle className="text-primary flex-shrink-0" size={18} />
-              <span className="text-foreground">
-                Bio updated successfully —{" "}
-                <button
-                  onClick={() => reset()}
-                  className="text-primary font-bold underline underline-offset-4 hover:opacity-80"
-                >
-                  make another edit
-                </button>
+              <FiCheckCircle size={18} />
+              <span className="text-xs font-bold uppercase tracking-[0.2em]">
+                Identity Synced to Cloud
               </span>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="space-y-10"
-          >
-            {/* ── Section: Identity ─────────────────────────────── */}
-            <motion.div variants={fadeInRight} className="space-y-6">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <FiUser size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
-                  Identity
-                </h2>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-12 bg-card p-8 md:p-12 rounded-[3rem] border border-border shadow-2xl relative overflow-hidden"
+        >
+          {/* Subtle Background Accent */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -z-10" />
+
+          {/* ── Identity Section ────────────────────────────────────── */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <FiUser className="text-primary text-lg" />
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+                Core Profile
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Legal Name
+                </label>
+                <input
+                  {...register("name", { required: true })}
+                  className={inputCls(!!errors.name)}
+                />
               </div>
-
-              <div className="grid sm:grid-cols-2 gap-6">
-                <Field label="Full Name" required error={errors.name?.message}>
-                  <input
-                    {...register("name", { required: "Name is required" })}
-                    placeholder="Shohag Miah"
-                    className={inputCls(!!errors.name)}
-                  />
-                </Field>
-
-                <Field label="Job Title" required error={errors.title?.message}>
-                  <input
-                    {...register("title", { required: "Title is required" })}
-                    placeholder="Full-Stack Developer"
-                    className={inputCls(!!errors.title)}
-                  />
-                </Field>
-
-                <Field label="Email" required error={errors.email?.message}>
-                  <input
-                    type="email"
-                    {...register("email", {
-                      required: "Email is required",
-                      pattern: {
-                        value: /^\S+@\S+\.\S+$/,
-                        message: "Invalid email address",
-                      },
-                    })}
-                    placeholder="admin@shohag.com"
-                    className={inputCls(!!errors.email)}
-                  />
-                </Field>
-
-                <Field
-                  label="Freelance Status"
-                  required
-                  error={errors.freelance?.message}
-                >
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Professional Title
+                </label>
+                <input
+                  {...register("title", { required: true })}
+                  className={inputCls(!!errors.title)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Direct Email
+                </label>
+                <input
+                  type="email"
+                  {...register("email", { required: true })}
+                  className={inputCls(!!errors.email)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                  Availability
+                </label>
+                <div className="relative group">
                   <select
-                    {...register("freelance", { required: true })}
-                    className={`${inputCls(!!errors.freelance)} appearance-none cursor-pointer`}
+                    {...register("freelance")}
+                    className={`${inputCls()} appearance-none cursor-pointer pr-10 font-sans`}
                   >
-                    <option value="available">Available</option>
-                    <option value="busy">Busy</option>
-                    <option value="unavailable">Unavailable</option>
+                    <option value="available">🟢 Available for Projects</option>
+                    <option value="busy">🟡 Currently Engaged</option>
+                    <option value="unavailable">🔴 Not Accepting Work</option>
                   </select>
-                </Field>
+                  <FiTerminal className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-hover:text-primary transition-colors" />
+                </div>
               </div>
-            </motion.div>
+            </div>
+          </div>
 
-            {/* ── Section: Location & Stats ─────────────────────── */}
-            <motion.div variants={fadeInRight} className="space-y-6">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <FiMapPin size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
-                  Location & Stats
-                </h2>
+          {/* ── Narrative Section ───────────────────────────────────── */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <FiBriefcase className="text-primary text-lg" />
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+                Storytelling
+              </h2>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-end px-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Elevator Pitch (Short Bio)
+                </label>
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  {shortBio.length}/160
+                </span>
               </div>
+              <textarea
+                rows={2}
+                {...register("shortBio", { maxLength: 160 })}
+                className={`${inputCls(!!errors.shortBio)} resize-none font-sans italic`}
+              />
+            </div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
-                <Field
-                  label="Location"
-                  required
-                  error={errors.location?.message}
-                >
-                  <input
-                    {...register("location", {
-                      required: "Location is required",
-                    })}
-                    placeholder="Cyprus"
-                    className={inputCls(!!errors.location)}
-                  />
-                </Field>
-
-                <Field
-                  label="Years of Experience"
-                  hint="e.g. 3.5"
-                  required
-                  error={errors.experience?.message}
-                >
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    {...register("experience", {
-                      required: "Experience is required",
-                      min: { value: 0, message: "Must be 0 or more" },
-                    })}
-                    placeholder="3.5"
-                    className={inputCls(!!errors.experience)}
-                  />
-                </Field>
+            <div className="space-y-2">
+              <div className="flex justify-between items-end px-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  The Long Read (Full Bio)
+                </label>
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  {longBio.length}/600
+                </span>
               </div>
-            </motion.div>
+              <textarea
+                rows={5}
+                {...register("longBio", { maxLength: 600 })}
+                className={`${inputCls(!!errors.longBio)} resize-y font-sans leading-relaxed`}
+              />
+            </div>
+          </div>
 
-            {/* ── Section: Bio Content ──────────────────────────── */}
-            <motion.div variants={fadeInRight} className="space-y-6">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <FiBriefcase size={16} className="text-primary" />
-                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
-                  Bio Content
-                </h2>
+          {/* ── Connections ─────────────────────────────────────────── */}
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <FiGlobe className="text-primary text-lg" />
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+                Digital Touchpoints
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="relative group">
+                <FiGithub className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary" />
+                <input
+                  {...register("github")}
+                  placeholder="Github"
+                  className={`${inputCls()} pl-11`}
+                />
               </div>
+              <div className="relative group">
+                <FiLinkedin className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary" />
+                <input
+                  {...register("linkedin")}
+                  placeholder="LinkedIn"
+                  className={`${inputCls()} pl-11`}
+                />
+              </div>
+              <div className="relative group">
+                <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary" />
+                <input
+                  {...register("website")}
+                  placeholder="Website"
+                  className={`${inputCls()} pl-11`}
+                />
+              </div>
+            </div>
+          </div>
 
-              <Field
-                label="Short Bio"
-                hint={`${shortBio.length}/160`}
-                required
-                error={errors.shortBio?.message}
-              >
-                <textarea
-                  rows={2}
-                  {...register("shortBio", {
-                    required: "Short bio is required",
-                    maxLength: {
-                      value: 160,
-                      message: "Keep it under 160 characters",
-                    },
+          {/* ── Footer / Submit ────────────────────────────────────── */}
+          <footer className="pt-10 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-4">
+              <div
+                className={`h-2 w-2 rounded-full ${isDirty ? "bg-chart-3 animate-pulse shadow-[0_0_10px_rgba(var(--chart-3),0.5)]" : "bg-muted"}`}
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-tighter text-foreground">
+                  {isDirty ? "Unsaved Changes" : "Cloud Synchronized"}
+                </span>
+                <span className="text-[9px] font-mono text-muted-foreground italic">
+                  Last sync: Today at{" "}
+                  {new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
-                  placeholder="One-liner that captures your approach..."
-                  className={`${inputCls(!!errors.shortBio)} resize-none`}
-                />
-              </Field>
+                </span>
+              </div>
+            </div>
 
-              <Field
-                label="Long Bio"
-                hint={`${longBio.length}/600`}
-                required
-                error={errors.longBio?.message}
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => reset()}
+                disabled={!isDirty || isSubmitting}
+                className="flex-1 sm:flex-none px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-all disabled:opacity-0"
               >
-                <textarea
-                  rows={5}
-                  {...register("longBio", {
-                    required: "Long bio is required",
-                    maxLength: {
-                      value: 600,
-                      message: "Keep it under 600 characters",
-                    },
-                  })}
-                  placeholder="Tell your story..."
-                  className={`${inputCls(!!errors.longBio)} resize-y`}
-                />
-              </Field>
-            </motion.div>
-
-            {/* ── Section: Social Links ─────────────────────────── */}
-            <motion.div variants={fadeInRight} className="space-y-6">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <span className="text-primary text-xs font-bold">{"</>"}</span>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
-                  Social Links
-                </h2>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-6">
-                {[
-                  {
-                    name: "github",
-                    label: "GitHub",
-                    placeholder: "https://github.com/username",
-                  },
-                  {
-                    name: "linkedin",
-                    label: "LinkedIn",
-                    placeholder: "https://linkedin.com/in/username",
-                  },
-                  {
-                    name: "website",
-                    label: "Website",
-                    placeholder: "https://yoursite.com",
-                  },
-                ].map(({ name, label, placeholder }) => (
-                  <Field key={name} label={label} error={errors[name]?.message}>
-                    <input
-                      type="url"
-                      {...register(name, {
-                        pattern: {
-                          value: /^(https?:\/\/).+/,
-                          message: "Must start with https://",
-                        },
-                      })}
-                      placeholder={placeholder}
-                      className={inputCls(!!errors[name])}
-                    />
-                  </Field>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* ── Submit Row ────────────────────────────────────── */}
-            <motion.div
-              variants={fadeInRight}
-              className="flex items-center justify-between pt-4 border-t border-border"
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-1.5 h-1.5 rounded-full ${isDirty ? "bg-primary animate-pulse" : "bg-muted-foreground/30"}`}
-                />
-                <p className="text-[10px] uppercase font-bold tracking-tighter text-muted-foreground">
-                  {isDirty ? "Unsaved changes" : "All changes saved"}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => reset()}
-                  disabled={!isDirty || isSubmitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 disabled:opacity-0"
-                >
-                  Discard
-                </button>
-
-                <motion.button
-                  type="submit"
-                  disabled={isSubmitting}
-                  whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
-                  whileTap={{ scale: isSubmitting ? 1 : 0.97 }}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-all duration-200 disabled:opacity-60 disabled:grayscale shadow-lg shadow-primary/10"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <LuLoader size={16} className="animate-spin" />
-                      Saving…
-                    </>
-                  ) : (
-                    <>
-                      <FiSave size={16} />
-                      Save Changes
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
+                Discard
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-primary/10 active:scale-95 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <LuLoader className="animate-spin text-lg" />
+                ) : (
+                  <FiSave className="text-lg" />
+                )}
+                Sync Identity
+              </button>
+            </div>
+          </footer>
         </form>
       </div>
     </section>
