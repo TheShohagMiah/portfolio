@@ -2,65 +2,74 @@ import mongoose from "mongoose";
 
 const aboutSchema = new mongoose.Schema(
   {
-    mainTitle: {
+    // Executive Summary Section
+    title: {
       type: String,
       required: [true, "Please add a main title"],
       trim: true,
       default: "Design. Code. Iterate.",
-    },
-    subTitle: {
-      type: String,
-      required: [true, "Please add a sub-headline"],
-      trim: true,
     },
     bio: {
       type: String,
       required: [true, "Please add your biography"],
     },
 
-    // Quick Stats
-    experienceYears: { type: String, default: "3.5+" },
-    location: { type: String, default: "Cyprus" },
+    // Quick Stats Section (Matches the Right-Side Bento Card)
+    experienceYears: {
+      type: String,
+      default: "3.5+",
+    },
+    location: {
+      type: String,
+      default: "Cyprus",
+    },
     freelanceStatus: {
       type: String,
-      enum: ["Available", "Busy", "Not Looking"], // Enum দিলে ভুল ডাটা আসবে না
-      default: "Available",
+      enum: ["available", "busy", "unavailable"],
+      default: "available",
     },
 
-    // Academic Timeline - Simplified
+    // Academic Timeline Section (Matches useFieldArray keys)
     education: [
       {
-        duration: {
-          from: { type: String, required: true }, // e.g., "2018"
-          to: { type: String, required: true }, // e.g., "2022" or "Present"
+        courseTitle: {
+          type: String,
+          required: [true, "Course title is required"],
+        }, // e.g., "Bachelor of Science"
+        subject: {
+          type: String,
+          required: [true, "Subject is required"],
+        }, // e.g., "Computer Science"
+        institution: {
+          type: String,
+          required: [true, "Institution is required"],
         },
-        subject: { type: String, required: true },
-        courseTitle: { type: String, required: true },
-        institution: { type: String, required: true },
-        description: { type: String },
+        duration: {
+          from: { type: String, required: true }, // Matches register(`education.${index}.duration.from`)
+          to: { type: String, required: true }, // Matches register(`education.${index}.duration.to`)
+        },
+        description: {
+          type: String,
+        }, // Optional extra detail
       },
     ],
 
-    // // Categorized Skills
-    // skills: [
-    //   {
-    //     category: {
-    //       type: String,
-    //       required: true,
-    //       enum: ["Frontend", "Backend", "Tools", "Soft Skills"],
-    //     },
-    //     items: [{ type: String }], // e.g., ["React", "Next.js"]
-    //   },
-    // ],
-
+    // Media Assets (For future uploads in the panel)
     profileImage: {
       url: { type: String, default: "" },
       public_id: { type: String, default: "" },
     },
-    resumeUrl: { type: String },
+    resume: {
+      url: { type: String, default: "" },
+      public_id: { type: String, default: "" },
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
-const About = mongoose.model("About", aboutSchema);
+// Prevent model overwrite on HMR (Hot Module Replacement)
+const About = mongoose.models.About || mongoose.model("About", aboutSchema);
+
 export default About;

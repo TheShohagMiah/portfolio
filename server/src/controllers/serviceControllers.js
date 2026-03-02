@@ -5,12 +5,21 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // @desc    Add New Service
 export const addService = asyncHandler(async (req, res) => {
   const newService = await Service.create(req.body);
-  res.status(201).json({ success: true, data: newService });
+  if (!newService) {
+    throw new ApiError(102, "Not worked");
+  }
+  res
+    .status(201)
+    .json({
+      success: true,
+      message: "Service was added successfully.",
+      data: newService,
+    });
 });
 
 // @desc    Get All Services
 export const getServices = asyncHandler(async (req, res) => {
-  const services = await Service.find({}).sort({ order: 1 }); // Order অনুযায়ী সর্টিং
+  const services = await Service.find({}).sort({ order: 1 });
 
   if (services.length === 0) {
     throw new ApiError(404, "No services found");

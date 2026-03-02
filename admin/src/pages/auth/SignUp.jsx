@@ -1,43 +1,65 @@
-import React, { useState, forwardRef } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiUser,
-  FiMail,
-  FiLock,
-  FiShield,
   FiArrowRight,
   FiGithub,
   FiAlertCircle,
   FiChrome,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import { Field } from "../../components/shared/InputField";
 import SocialButton from "../../components/shared/SocialButton";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema } from "../../validators/auth/authValidations";
 
-/* ─── Input base classes (Color Refined) ─────────────────────────── */
 export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
-   placeholder:text-muted-foreground
+  `w-full px-4 py-3 rounded-xl bg-white/5 border text-sm text-white
+   placeholder:text-gray-500
    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
    transition-all duration-200
-   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
+   ${hasError ? "border-red-500 ring-red-500/10" : "border-white/10 hover:border-white/30"}`;
+
+// ✅ Reusable password input with show/hide toggle
+const PasswordInput = ({ hasError, ...props }) => {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        type={show ? "text" : "password"}
+        className={`${inputCls(hasError)} pr-11`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((prev) => !prev)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1"
+        tabIndex={-1} // don't interrupt tab flow
+      >
+        {show ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+      </button>
+    </div>
+  );
+};
 
 const SignUp = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm({
-    mode: "onBlur",
-    // resolver: zodResolver(registerSchema), // Highly recommended to add this!
-  });
+  } = useForm({ resolver: zodResolver(registerSchema), mode: "onBlur" });
+
+  const password = watch("password");
 
   const onSubmit = async (data) => {
     try {
@@ -50,18 +72,16 @@ const SignUp = () => {
       if (response.data?.success) {
         toast.success(response.data.message || "OTP sent to your email!");
         reset();
-
         setTimeout(() => {
           navigate("/auth/verify-account", { state: { email: data.email } });
         }, 1500);
       }
     } catch (error) {
-      console.error("Registration Error:", error.response?.data);
       const backendMessage = error.response?.data?.message;
       toast.error(backendMessage || "Registration failed");
     }
   };
-  // Tracking mouse for the ambient glow effect
+
   const handleMouseMove = (e) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
@@ -69,34 +89,30 @@ const SignUp = () => {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4  overflow-hidden"
+      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4 overflow-hidden"
     >
-      {/* --- Dynamic Background Effects --- */}
+      {/* Dynamic Background */}
       <div className="fixed inset-0 pointer-events-none">
-        {/* Interactive Spotlight */}
         <div
           className="absolute inset-0 z-0 transition-opacity duration-500 opacity-50"
           style={{
-            background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(var(--primary-rgb), 0.15), transparent 40%)`,
+            background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
           }}
         />
-        {/* Static Blobs */}
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px]" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-5xl grid lg:grid-cols-5 gap-4 relative z-10"
       >
-        {/* LEFT COLUMN: BRANDING (Bento Card) */}
+        {/* LEFT: Branding */}
         <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-[2.5rem] p-10 flex flex-col justify-between overflow-hidden relative group">
           <div className="relative z-10">
             <motion.div
               whileHover={{ rotate: 90 }}
-              className="w-12 h-12 bg-primary text-black rounded-2xl flex items-center justify-center font-black text-xl mb-12 shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)]"
+              className="w-12 h-12 bg-primary text-black rounded-2xl flex items-center justify-center font-black text-xl mb-12 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
             >
               S.
             </motion.div>
@@ -110,88 +126,70 @@ const SignUp = () => {
             </h1>
             <p className="mt-6 text-gray-400 text-sm leading-relaxed max-w-[280px]">
               Join 10k+ developers building high-performance web applications
-              with Shohag.dev architecture.
+              with Shohag.dev.
             </p>
           </div>
-
-          <div className="mt-12 space-y-4 relative z-10">
-            <div className="flex items-center gap-3 text-[10px] font-black text-gray-500 tracking-widest uppercase">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />{" "}
-              SYSTEM STATUS: OPERATIONAL
-            </div>
+          <div className="mt-12 flex items-center gap-3 text-[10px] font-black text-gray-500 tracking-widest uppercase relative z-10">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            SYSTEM STATUS: OPERATIONAL
           </div>
-
-          {/* Decorative Shape */}
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         </div>
 
-        {/* RIGHT COLUMN: THE FORM (Bento Card) */}
+        {/* RIGHT: Form */}
         <div className="lg:col-span-3 bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Full Name */}
               <Field
                 label="Full Name"
                 required
                 error={errors.fullName?.message}
               >
                 <input
-                  {...register("fullName", {
-                    required: "Download text ",
-                  })}
-                  placeholder="Full Name"
+                  {...register("fullName")}
+                  placeholder="Shohag Miah"
                   className={inputCls(!!errors.fullName)}
                 />
               </Field>
 
-              {/* Email */}
               <Field label="Email" required error={errors.email?.message}>
                 <input
-                  {...register("email", {
-                    required: "Download text is required",
-                  })}
-                  placeholder="Enter your email"
+                  {...register("email")}
+                  placeholder="hello@shohag.dev"
                   className={inputCls(!!errors.email)}
                 />
               </Field>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Password */}
               <Field label="Password" required error={errors.password?.message}>
-                <input
-                  {...register("password", {
-                    required: "Download text is required",
-                  })}
-                  type="password"
-                  placeholder="******"
-                  className={inputCls(!!errors.password)}
+                {/* ✅ PasswordInput handles show/hide internally */}
+                <PasswordInput
+                  {...register("password")}
+                  hasError={!!errors.password}
+                  placeholder="••••••"
                 />
               </Field>
 
-              {/* Confirm Password */}
               <Field
                 label="Confirm Password"
                 required
-                error={errors.password?.message}
+                error={errors.confirmPassword?.message}
               >
-                <input
-                  {...register("confirmPassword", {
-                    required: "Download text is required",
-                  })}
-                  type="password"
-                  placeholder="******"
-                  className={inputCls(!!errors.confirmPassword)}
+                <PasswordInput
+                  {...register("confirmPassword")}
+                  hasError={!!errors.confirmPassword}
+                  placeholder="••••••"
                 />
               </Field>
             </div>
 
             <div className="pt-4 space-y-6">
               <motion.button
+                type="submit"
                 whileHover={{ scale: 1.01, y: -2 }}
                 whileTap={{ scale: 0.99 }}
                 disabled={isSubmitting}
-                className="w-full bg-logo text-white hover:bg-background/90 py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                className="w-full bg-primary text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
@@ -202,11 +200,9 @@ const SignUp = () => {
                 )}
               </motion.button>
 
-              <div className="relative flex items-center gap-4">
+              <div className="relative flex items-center gap-4 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">
                 <div className="h-px flex-1 bg-white/5" />
-                <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">
-                  Quick Connect
-                </span>
+                Quick Connect
                 <div className="h-px flex-1 bg-white/5" />
               </div>
 
@@ -228,39 +224,8 @@ const SignUp = () => {
           </p>
         </div>
       </motion.div>
-
-      {/* Global CSS for Tailwind Refinement */}
-      <style jsx global>{`
-        :root {
-          --primary-rgb: 255, 255, 255;
-        } /* Set your primary RGB color here (e.g., 59, 130, 246) */
-        .input-base {
-          width: 100%;
-          background: transparent;
-          outline: none;
-          font-size: 0.875rem;
-          padding: 1rem 1rem 1rem 3rem;
-          border-radius: 1rem;
-          transition: all 0.3s ease;
-        }
-      `}</style>
     </div>
   );
 };
-
-const ErrorMessage = ({ message }) => (
-  <AnimatePresence>
-    {message && (
-      <motion.p
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: "auto" }}
-        exit={{ opacity: 0, height: 0 }}
-        className="text-red-500 text-[10px] font-bold flex items-center gap-1 mt-1 ml-1 overflow-hidden"
-      >
-        <FiAlertCircle /> {message}
-      </motion.p>
-    )}
-  </AnimatePresence>
-);
 
 export default SignUp;

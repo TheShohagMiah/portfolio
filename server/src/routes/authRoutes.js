@@ -4,6 +4,7 @@ import {
   userLogOut,
   userRegister,
   verifyEmail,
+  isAuthenticated,
 } from "../controllers/authControllers.js";
 import { Protected } from "../middlewares/protected.js";
 import { validate } from "../middlewares/validate.js";
@@ -16,5 +17,5 @@ authRouter.post("/login", userLogin);
 
 authRouter.post("/logout", Protected, userLogOut);
 authRouter.post("/verify-account", Protected, verifyEmail);
-
+authRouter.get("/check-auth", Protected, isAuthenticated);
 export default authRouter;

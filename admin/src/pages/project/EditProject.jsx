@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +16,7 @@ import {
   FiItalic,
   FiList,
   FiCode as FiInlineCode,
+  FiArrowLeft,
 } from "react-icons/fi";
 import {
   LuHeading2,
@@ -30,7 +32,6 @@ import StarterKit from "@tiptap/starter-kit";
 import { Field } from "../../components/shared/InputField";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { useState } from "react";
 
 /* ─── Shared Styling ─────────────────────────────────────────── */
 const inputCls = (hasError) =>
@@ -73,7 +74,6 @@ const Divider = () => <div className="w-px h-5 bg-border self-center mx-1" />;
 
 const EditorToolbar = ({ editor }) => {
   if (!editor) return null;
-
   return (
     <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-border bg-secondary/40 rounded-t-2xl">
       <ToolbarBtn
@@ -97,9 +97,7 @@ const EditorToolbar = ({ editor }) => {
       >
         <FiInlineCode size={14} />
       </ToolbarBtn>
-
       <Divider />
-
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         active={editor.isActive("heading", { level: 2 })}
@@ -114,9 +112,7 @@ const EditorToolbar = ({ editor }) => {
       >
         <LuHeading3 size={15} />
       </ToolbarBtn>
-
       <Divider />
-
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         active={editor.isActive("bulletList")}
@@ -131,9 +127,7 @@ const EditorToolbar = ({ editor }) => {
       >
         <LuListOrdered size={14} />
       </ToolbarBtn>
-
       <Divider />
-
       <ToolbarBtn
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         active={editor.isActive("codeBlock")}
@@ -148,20 +142,18 @@ const EditorToolbar = ({ editor }) => {
       >
         <LuSeparatorHorizontal size={14} />
       </ToolbarBtn>
-
       <Divider />
-
       <ToolbarBtn
         onClick={() => editor.chain().focus().undo().run()}
         active={false}
-        title="Undo (Ctrl+Z)"
+        title="Undo"
       >
         <LuUndo2 size={14} />
       </ToolbarBtn>
       <ToolbarBtn
         onClick={() => editor.chain().focus().redo().run()}
         active={false}
-        title="Redo (Ctrl+Shift+Z)"
+        title="Redo"
       >
         <LuRedo2 size={14} />
       </ToolbarBtn>
@@ -185,6 +177,13 @@ const RichTextEditor = ({ value, onChange, hasError }) => {
     },
   });
 
+  // ✅ Sync initial content when fetched data arrives
+  useEffect(() => {
+    if (editor && value && editor.isEmpty) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
+
   return (
     <div
       className={`rounded-2xl border overflow-hidden transition-all duration-200
@@ -199,10 +198,24 @@ const RichTextEditor = ({ value, onChange, hasError }) => {
   );
 };
 
+/* ─── Section Header ─────────────────────────────────────────── */
+const SectionHeader = ({ icon, label }) => (
+  <div className="flex items-center gap-3 border-b border-border pb-4">
+    {icon}
+    <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      {label}
+    </h2>
+  </div>
+);
+
 /* ═══════════════════════════════════════════════════════════════
    Main Component
 ═══════════════════════════════════════════════════════════════ */
-const AddProject = () => {
+const EditProject = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [fetching, setFetching] = useState(true);
   const [preview, setPreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const fileInputRef = useRef(null);
@@ -221,7 +234,7 @@ const AddProject = () => {
       slug: "",
       description: "",
       category: "",
-      status: "",
+      status: "draft",
       githubRepo: "",
       liveLink: "",
       technologies: [],
@@ -235,10 +248,43 @@ const AddProject = () => {
 
   const watchedTitle = watch("title");
 
-  // ✅ FIX: Only update the display field — slug is computed in onSubmit
+  // Auto-generate slug preview from title
   useEffect(() => {
     setValue("slug", toSlug(watchedTitle));
   }, [watchedTitle, setValue]);
+
+  // ── Fetch existing project ────────────────────────────────────
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/projects/${id}`,
+          { withCredentials: true },
+        );
+        if (res.data.success) {
+          const p = res.data.data;
+          reset({
+            title: p.title || "",
+            slug: p.slug || "",
+            description: p.description || "",
+            category: p.category || "",
+            status: p.status || "draft",
+            githubRepo: p.githubRepo || "",
+            liveLink: p.liveLink || "",
+            // ✅ Convert flat string array → RHF fieldArray shape
+            technologies: (p.technologies || []).map((t) => ({ value: t })),
+          });
+          setPreview(p.image?.url || null);
+        }
+      } catch {
+        toast.error("Could not load project.");
+        navigate("/admin/projects");
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchProject();
+  }, [id, navigate, reset]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -250,6 +296,7 @@ const AddProject = () => {
 
   const onSubmit = async (data) => {
     try {
+      // ✅ FIX: Derive slug from title — not from RHF state
       const slug = toSlug(data.title);
       const technologies = data.technologies
         .map((t) => t.value)
@@ -257,62 +304,72 @@ const AddProject = () => {
 
       const formData = new FormData();
       formData.append("title", data.title);
-      formData.append("slug", slug); // ✅ computed slug, not from RHF state
+      formData.append("slug", slug);
       formData.append("description", data.description);
       formData.append("category", data.category);
       formData.append("status", data.status);
       formData.append("githubRepo", data.githubRepo);
       formData.append("liveLink", data.liveLink);
+      // ✅ FIX: Send as technologies[] not JSON.stringify
       technologies.forEach((tech) => formData.append("technologies[]", tech));
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
+      if (imageFile) formData.append("image", imageFile);
 
-      const response = await axios.post(
-        "http://localhost:5000/api/projects",
+      const res = await axios.patch(
+        `http://localhost:5000/api/projects/${id}`,
         formData,
         {
-          withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
         },
       );
 
-      if (response.data.success) {
-        toast.success(response.data.message);
-        handleReset();
+      if (res.data.success) {
+        toast.success("Project updated successfully!");
+        navigate("/admin/projects");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message ?? "Something went wrong.");
+    } catch (err) {
+      toast.error(err.response?.data?.message ?? "Something went wrong.");
     }
   };
 
-  const handleReset = () => {
-    reset();
-    setPreview(null);
-    setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  // ── Loading State ─────────────────────────────────────────────
+  if (fetching) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <p className="text-muted-foreground font-mono text-xs tracking-[0.3em] animate-pulse uppercase">
+          Accessing vault...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <section className="py-12 min-h-screen text-foreground selection:bg-primary/30">
       <div className="max-w-4xl mx-auto px-6">
         {/* ── Header ──────────────────────────────────────────── */}
         <header className="mb-12">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-all text-[10px] font-bold uppercase tracking-[0.2em] mb-6"
+          >
+            <FiArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            Back to Vault
+          </button>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-[2px] w-8 bg-primary" />
             <span className="text-primary font-bold uppercase tracking-[0.3em] text-[10px]">
-              Archive Expansion
+              Archive Modification
             </span>
           </div>
           <h1 className="text-4xl font-bold tracking-tight">
-            Add New{" "}
-            <span className="text-primary italic font-serif">Project.</span>
+            Modify{" "}
+            <span className="text-primary italic font-serif">Entry.</span>
           </h1>
           <p className="text-muted-foreground mt-3 text-sm max-w-md leading-relaxed">
-            Populate your digital vault with fresh work. High-quality thumbnails
-            and precise tags improve discovery.
+            Update your vault record. Changes are committed directly to the
+            database on save.
           </p>
         </header>
 
@@ -327,7 +384,17 @@ const AddProject = () => {
                     alt="Preview"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                    <label className="p-4 bg-primary text-primary-foreground rounded-full shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                      <FiUploadCloud size={20} />
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={handleImageChange}
+                        accept="image/*"
+                        ref={fileInputRef}
+                      />
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
@@ -338,7 +405,7 @@ const AddProject = () => {
                       }}
                       className="p-4 bg-destructive text-destructive-foreground rounded-full shadow-xl hover:scale-110 transition-transform"
                     >
-                      <FiX size={24} />
+                      <FiX size={20} />
                     </button>
                   </div>
                 </>
@@ -410,6 +477,7 @@ const AddProject = () => {
                 label="Classification"
               />
               <div className="grid sm:grid-cols-2 gap-8">
+                {/* ✅ FIX: Category field was missing from the original EditProject */}
                 <Field
                   label="Category"
                   required
@@ -452,13 +520,14 @@ const AddProject = () => {
               </div>
             </div>
 
-            {/* Section: Description */}
+            {/* Section: Description — TipTap rich text */}
             <div className="space-y-4">
               <Field
                 label="Project Description"
                 required
                 error={errors.description?.message}
               >
+                {/* ✅ FIX: Was a plain <textarea> — now TipTap so HTML renders correctly */}
                 <Controller
                   name="description"
                   control={control}
@@ -509,7 +578,7 @@ const AddProject = () => {
                       >
                         <input
                           {...register(`technologies.${index}.value`, {
-                            required: "Technology name is required",
+                            required: "Required",
                           })}
                           placeholder="e.g. React"
                           className="bg-transparent text-xs font-medium focus:outline-none w-24"
@@ -588,15 +657,15 @@ const AddProject = () => {
                   }`}
                 />
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  {isDirty ? "Payload Modified" : "System Ready"}
+                  {isDirty ? "Unsaved Changes" : "In Sync"}
                 </p>
               </div>
 
               <div className="flex gap-4 w-full md:w-auto">
                 <button
                   type="button"
-                  onClick={handleReset}
-                  disabled={!isDirty || isSubmitting}
+                  onClick={() => navigate(-1)}
+                  disabled={isSubmitting}
                   className="flex-1 md:flex-none px-8 py-3 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all disabled:opacity-0"
                 >
                   Discard
@@ -611,7 +680,7 @@ const AddProject = () => {
                   ) : (
                     <FiSave className="text-lg" />
                   )}
-                  Deploy Project
+                  Update
                 </button>
               </div>
             </div>
@@ -622,13 +691,4 @@ const AddProject = () => {
   );
 };
 
-const SectionHeader = ({ icon, label }) => (
-  <div className="flex items-center gap-3 border-b border-border pb-4">
-    {icon}
-    <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-      {label}
-    </h2>
-  </div>
-);
-
-export default AddProject;
+export default EditProject;

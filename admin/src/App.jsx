@@ -14,53 +14,55 @@ import AddProject from "./pages/project/AddProject";
 import Dashboard from "./pages/dashboard/Dashboard";
 import ContactManagement from "./pages/contact/Contact";
 import AddSkill from "./pages/skills/AddSkill";
+import NotFound from "./pages/404/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+import Profile from "./pages/profile/Profile";
+import EditProject from "./pages/project/EditProject";
 
 const App = () => {
   return (
-    <div className="">
+    <div className="bg-white dark:bg-[#050505] transition-colors duration-300">
       <Toaster />
       <Routes>
-        <Route element={<Outlet />}>
-          {/* Auth Routes (No Sidebar) */}
-          <Route path="auth">
-            <Route path="signup" element={<SignUp />} />
-            <Route path="signin" element={<SignIn />} />
-            <Route path="verify-account" element={<OtpVerification />} />
-          </Route>
-
-          {/* Dashboard Routes (With AdminLayout Sidebar/Nav) */}
-          <Route path="admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="hero-management" element={<Hero />} />
-            <Route path="about" element={<UpdateBioForm />} />
-            <Route path="skills" element={<div>Skills List</div>} />
-            <Route path="skills/new" element={<AddSkill />} />
-            <Route path="projects" element={<AllProjects />} />
-            <Route path="projects/new" element={<AddProject />} />
-            <Route path="services" element={<AllServices />} />
-            <Route path="services/new" element={<AddService />} />
-            <Route path="contact" element={<ContactManagement />} />
-          </Route>
-        </Route>
-
-        {/* --- Client/Portfolio Routes --- */}
-        {/* You can add your ClientThemeProvider here later */}
-        <Route path="/" element={<div>Client Layout Component Here</div>}>
-          <Route index element={<div>Portfolio Home</div>} />
-        </Route>
-
-        {/* --- 404 Route --- */}
+        {/* --- Public Auth Routes --- */}
         <Route
-          path="*"
+          path="auth"
           element={
-            <div className="h-screen flex items-center justify-center bg-[#050505] text-white">
-              <h1 className="text-2xl font-black italic">
-                404 | Lost in Space
-              </h1>
-            </div>
+            <PublicRoute>
+              <Outlet />
+            </PublicRoute>
           }
-        />
+        >
+          <Route path="signup" element={<SignUp />} />
+          <Route path="signin" element={<SignIn />} />
+          <Route path="verify-account" element={<OtpVerification />} />
+        </Route>
+
+        {/* --- Protected Admin Routes --- */}
+        <Route
+          path="admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="hero-management" element={<Hero />} />
+          <Route path="about" element={<UpdateBioForm />} />
+          <Route path="skills/new" element={<AddSkill />} />
+          <Route path="projects" element={<AllProjects />} />
+          <Route path="projects/new" element={<AddProject />} />
+          <Route path="services" element={<AllServices />} />
+          <Route path="projects/edit/:id" element={<EditProject />} />
+          <Route path="services/new" element={<AddService />} />
+          <Route path="contact" element={<ContactManagement />} />
+          <Route path="profile/me/:id" element={<Profile />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

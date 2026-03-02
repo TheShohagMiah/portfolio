@@ -11,32 +11,10 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
-
-/* ─── Mock Data ───────────────────────────────────────────────────── */
-const INITIAL_SERVICES = [
-  {
-    id: 1,
-    title: "Frontend Development",
-    description: "Crafting visually stunning interfaces with high performance.",
-    icon: "FiLayout",
-    tags: ["React", "Next.js"],
-  },
-  {
-    id: 2,
-    title: "Backend Architecture",
-    description: "Designing scalable server-side logic and database schemas.",
-    icon: "FiServer",
-    tags: ["Node.js", "Express"],
-  },
-  {
-    id: 3,
-    title: "Full Stack Solutions",
-    description:
-      "End-to-end product development from wireframes to deployment.",
-    icon: "FiLayers",
-    tags: ["MERN Stack"],
-  },
-];
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useEffect } from "react";
+import DeleteModal from "../../components/shared/DeleteModal";
 
 /* ─── Icon Renderer Helper ────────────────────────────────────────── */
 const IconRenderer = ({ name, className }) => {
@@ -45,23 +23,54 @@ const IconRenderer = ({ name, className }) => {
 };
 
 const AllServices = () => {
-  const [services, setServices] = useState(INITIAL_SERVICES);
+  const [services, setServices] = useState([]);
   const [search, setSearch] = useState("");
-  const [toDelete, setToDelete] = useState(null);
-  const [deletedTitle, setDeletedTitle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [openDeleteModal, setOpenDeleteModal] = useState(null);
+  const getAllServices = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:5000/api/services", {
+        withCredentials: true,
+      });
+      console.log(response);
+      if (response.data.success) {
+        setServices(response.data?.data);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getAllServices();
+  }, []);
+  console.log(services);
+
+  const handleDeleteService = async (id) => {
+    setOpenDeleteModal(null);
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/services/${id}`,
+        { withCredentials: true },
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setServices((prev) => prev.filter((p) => p._id !== id));
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
 
   const filtered = services.filter(
     (s) =>
       s.title.toLowerCase().includes(search.toLowerCase()) ||
       s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())),
   );
-
-  const handleDeleteConfirm = () => {
-    setServices((prev) => prev.filter((s) => s.id !== toDelete.id));
-    setDeletedTitle(toDelete.title);
-    setToDelete(null);
-    setTimeout(() => setDeletedTitle(null), 3000);
-  };
 
   return (
     <section className="py-8 min-h-screen text-foreground transition-colors duration-500">
@@ -98,25 +107,6 @@ const AllServices = () => {
             </Link>
           </div>
         </div>
-
-        {/* ── Toast Notification ────────────────────────────────────── */}
-        <AnimatePresence>
-          {deletedTitle && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-chart-5/10 border border-chart-5/20 text-chart-5">
-                <FiCheckCircle size={18} />
-                <span className="text-xs font-bold uppercase tracking-widest">
-                  Protocol Terminated: {deletedTitle}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── Data Table: The Vault ──────────────────────────────────── */}
         <div className="bg-card border border-border rounded-[2.5rem] overflow-hidden shadow-xl">
@@ -177,17 +167,27 @@ const AllServices = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-end gap-3">
                         <Link
-                          to={`/admin/services/edit/${service.id}`}
+                          to={`/admin/services/edit/${service._id}`}
                           className="p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-all shadow-sm"
                         >
                           <FiEdit2 size={14} />
                         </Link>
                         <button
-                          onClick={() => setToDelete(service)}
+                          onClick={() => setOpenDeleteModal(service._id)}
                           className="p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-all shadow-sm"
                         >
                           <FiTrash2 size={14} />
                         </button>
+
+                        <DeleteModal
+                          isOpen={!!openDeleteModal}
+                          title={
+                            services.find((p) => p._id === openDeleteModal)
+                              ?.title
+                          }
+                          onClose={() => setOpenDeleteModal(null)}
+                          onConfirm={() => handleDeleteService(openDeleteModal)}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -207,7 +207,7 @@ const AllServices = () => {
       </div>
 
       {/* ── Delete Confirmation Overlay ────────────────────────────── */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {toDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xl p-4">
             <motion.div
@@ -246,7 +246,7 @@ const AllServices = () => {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </section>
   );
 };

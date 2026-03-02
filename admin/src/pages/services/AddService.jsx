@@ -13,6 +13,9 @@ import {
   FiX,
 } from "react-icons/fi";
 import { LuLoader } from "react-icons/lu";
+import { Field } from "../../components/shared/InputField";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 /* ─── Shared Icon Dictionary ────────────────────────────────────── */
 const ICON_OPTIONS = [
@@ -77,6 +80,7 @@ const AddService = () => {
     control,
     watch,
     reset,
+    setError,
     formState: { errors, isSubmitting, isDirty },
   } = useForm({
     defaultValues: {
@@ -91,10 +95,43 @@ const AddService = () => {
   const watchAll = watch();
 
   const onSubmit = async (data) => {
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitSuccess(true);
-    setTimeout(() => setSubmitSuccess(false), 4000);
-    reset(data);
+    try {
+      const formattedData = {
+        ...data,
+        // Convert [{value: "React"}] to ["React"]
+        tags: data.tags.map((t) => t.value),
+      };
+      const response = await axios.post(
+        "http://localhost:5000/api/services",
+        formattedData,
+        { withCredentials: true },
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setSubmitSuccess(true);
+        reset();
+        setTimeout(() => setSubmitSuccess(false), 5000);
+      }
+    } catch (error) {
+      // 1. Log the full response to see what the backend is complaining about
+      console.error("Backend Error Data:", error.response?.data);
+
+      const backendMessage =
+        error.response?.data?.message || "Validation Error";
+      const backendErrors = error.response?.data?.errors; // If your API returns an errors object
+
+      // 2. Map specific errors to fields
+      if (backendErrors) {
+        Object.keys(backendErrors).forEach((key) => {
+          setError(key, { type: "server", message: backendErrors[key] });
+        });
+      } else if (backendMessage.toLowerCase().includes("title")) {
+        setError("title", { message: backendMessage });
+      }
+
+      toast.error(backendMessage);
+    }
   };
 
   return (
@@ -140,14 +177,17 @@ const AddService = () => {
           >
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-                  Service Designation
-                </label>
-                <input
-                  {...register("title", { required: "Identity required" })}
-                  placeholder="e.g. System Architecture"
-                  className={inputCls(!!errors.title)}
-                />
+                <Field
+                  label="Service Title"
+                  required
+                  error={errors.title?.message}
+                >
+                  <input
+                    {...register("title", { required: "Title is required" })}
+                    placeholder="e.g. Quantum Analytics Suite"
+                    className={inputCls(!!errors.title)}
+                  />
+                </Field>
               </div>
 
               <div className="space-y-2">
@@ -192,36 +232,62 @@ const AddService = () => {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
-                  Stack/Technologies
-                </label>
-                <div className="grid grid-cols-1 gap-3">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex gap-2 group">
-                      <input
-                        {...register(`tags.${index}.value`)}
-                        placeholder="e.g. Node.js"
-                        className={inputCls()}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="p-3 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <FiX />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {fields.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={() => append({ value: "" })}
-                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:opacity-80 mt-2 transition-all"
-                  >
-                    <FiPlus /> Add Technology
-                  </button>
-                )}
+                <Field
+                  label="Technologies"
+                  hint="List all technologies used in this project."
+                  required
+                >
+                  <div className="flex flex-wrap gap-3 p-6 bg-secondary/30 rounded-[2rem] border border-border shadow-inner">
+                    <AnimatePresence>
+                      {fields.map((field, index) => (
+                        <motion.div
+                          key={field.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.5 }}
+                          className="flex flex-col"
+                        >
+                          <div
+                            className={`flex items-center bg-card rounded-xl px-4 py-2 border transition-colors shadow-sm
+                                          ${
+                                            errors.tags?.[index]?.value
+                                              ? "border-destructive/50"
+                                              : "border-border hover:border-primary/50"
+                                          }`}
+                          >
+                            <input
+                              {...register(`tags.${index}.value`, {
+                                required: "Technology name is required",
+                              })}
+                              placeholder="e.g. React"
+                              className="bg-transparent text-xs font-medium focus:outline-none w-24"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                          {errors.tags?.[index]?.value && (
+                            <span className="text-[10px] text-destructive mt-1 ml-1">
+                              {errors.tags[index].value.message}
+                            </span>
+                          )}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+
+                    <button
+                      type="button"
+                      onClick={() => append({ value: "" })}
+                      className="group flex items-center gap-2 px-5 py-2 rounded-xl border-2 border-dashed border-primary/20 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all active:scale-95"
+                    >
+                      <FiPlus size={16} /> ADD TECH
+                    </button>
+                  </div>
+                </Field>
               </div>
             </div>
 

@@ -6,6 +6,7 @@ import {
   createProject,
   deleteProject,
   getAllProjects,
+  getById,
   updateProject,
 } from "../controllers/projectControllers.js";
 import {
@@ -42,5 +43,6 @@ projectRouter.patch(
 );
 
 projectRouter.delete("/:id", Protected, isAdmin, deleteProject);
+projectRouter.get("/:id", getById);
 
 export default projectRouter;

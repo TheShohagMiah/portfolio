@@ -1,64 +1,51 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FiMail,
   FiLock,
   FiArrowRight,
   FiGithub,
-  FiAlertCircle,
   FiChrome,
   FiEye,
   FiEyeOff,
 } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import SocialButton from "../../components/shared/SocialButton";
 import { Field } from "../../components/shared/InputField";
-import toast from "react-hot-toast";
-import axios from "axios";
-/* ─── Input base classes (Color Refined) ─────────────────────────── */
+import { useAuth } from "../../contexts/AuthContext";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "../../validators/auth/authValidations";
+
+// Theme-aware input styling
 export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl bg-muted/50 border text-sm text-foreground
-   placeholder:text-muted-foreground
+  `w-full px-4 py-3 rounded-xl text-sm transition-all duration-200
+   bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400
+   dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-gray-500
    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-   transition-all duration-200
-   ${hasError ? "border-destructive ring-destructive/10" : "border-border hover:border-muted-foreground/30"}`;
+   ${hasError ? "border-red-500 ring-red-500/10" : "hover:border-primary/30"}`;
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, user } = useAuth();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect to dashboard or the page they tried to access
+  const from = location.state?.from?.pathname || "/admin/dashboard";
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
-  } = useForm({
-    mode: "onBlur",
-    // resolver: zodResolver(registerSchema), // Highly recommended to add this!
-  });
+  } = useForm({ resolver: zodResolver(loginSchema), mode: "onBlur" });
 
   const onSubmit = async (data) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        data,
-        { withCredentials: true },
-      );
-      console.log(data);
-      if (response.data?.success) {
-        toast.success(response.data.message || "Login successfully");
-        reset();
-
-        setTimeout(() => {
-          navigate("/admin/dashboard", { state: { email: data.email } });
-        }, 1500);
-      }
-    } catch (error) {
-      console.error("Registration Error:", error.response?.data);
-      const backendMessage = error.response?.data?.message;
-      toast.error(backendMessage || "Login failed");
+    const result = await login(data);
+    if (result.success) {
+      navigate(from, { replace: true });
     }
   };
 
@@ -69,63 +56,68 @@ const SignIn = () => {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4 selection:bg-primary selection:text-black overflow-hidden "
+      className="min-h-screen w-full flex items-center justify-center p-4 transition-colors duration-300
+                 bg-white text-gray-900 dark:bg-[#050505] dark:text-white overflow-hidden"
     >
-      {/* Background Glow */}
+      {/* Dynamic Background Glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div
-          className="absolute inset-0 z-0 transition-opacity duration-500 opacity-40"
+          className="absolute inset-0 z-0 transition-opacity duration-500 opacity-20 dark:opacity-40"
           style={{
-            background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 255, 255, 0.08), transparent 40%)`,
+            background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
           }}
         />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-[440px] relative z-10"
       >
-        {/* The Glass Card */}
-        <div className="bg-white/[0.02] border border-white/5 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
+        <div className="bg-white border border-gray-200 shadow-2xl dark:bg-white/[0.02] dark:border-white/5 dark:backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-12">
           <div className="text-center mb-10">
-            <motion.div
-              initial={{ y: -10 }}
-              animate={{ y: 0 }}
-              className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black tracking-[0.2em] text-gray-400 mb-6"
-            >
+            <div className="inline-block px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-black tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-6">
               WELCOME BACK
-            </motion.div>
+            </div>
             <h2 className="text-4xl font-bold tracking-tighter italic font-serif">
               Sign In
             </h2>
-            <p className="text-gray-500 text-sm mt-2">
-              Enter your credentials to continue
-            </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email */}
             <Field label="Email" required error={errors.email?.message}>
-              <input
-                {...register("email", {
-                  required: "Email is required",
-                })}
-                placeholder="Enter your email"
-                className={inputCls(!!errors.email)}
-              />
+              <div className="relative">
+                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
+                  })}
+                  placeholder="name@company.com"
+                  className={`${inputCls(!!errors.email)} pl-11`}
+                />
+              </div>
             </Field>
-            {/* Password */}
+
             <Field label="Password" required error={errors.password?.message}>
-              <input
-                {...register("password", {
-                  required: "Password is required",
-                })}
-                type="password"
-                placeholder="******"
-                className={inputCls(!!errors.password)}
-              />
+              <div className="relative">
+                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  {...register("password", {
+                    required: "Password is required",
+                  })}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className={`${inputCls(!!errors.password)} pl-11`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
             </Field>
 
             <motion.button
@@ -133,10 +125,10 @@ const SignIn = () => {
               whileTap={{ scale: 0.99 }}
               disabled={isSubmitting}
               type="submit"
-              className="w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all mt-4 hover:bg-primary transition-colors duration-500"
+              className="w-full bg-gray-900 text-white dark:bg-white dark:text-black py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 mt-4 hover:bg-primary dark:hover:bg-primary transition-all duration-300 disabled:opacity-50"
             >
               {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   Access Account <FiArrowRight />
@@ -145,66 +137,36 @@ const SignIn = () => {
             </motion.button>
           </form>
 
-          {/* Social login separator */}
+          {/* Divider */}
           <div className="relative my-10">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/5"></div>
+              <div className="w-full border-t border-gray-200 dark:border-white/5"></div>
             </div>
             <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]">
-              <span className="bg-[#0a0a0a] px-4 text-gray-600">
+              <span className="bg-white dark:bg-[#0a0a0a] px-4 text-gray-400">
                 Quick Connect
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <SocialButton icon={<FiGithub />} label="GitHub" />
             <SocialButton icon={<FiChrome />} label="Google" />
+            <SocialButton icon={<FiGithub />} label="GitHub" />
           </div>
 
           <p className="mt-10 text-center text-gray-500 text-xs font-medium">
             New here?{" "}
             <Link
               to="/auth/signup"
-              className="text-white font-bold hover:text-primary transition-colors underline-offset-4 underline decoration-white/10"
+              className="text-gray-900 dark:text-white font-bold hover:text-primary transition-colors underline-offset-4 underline decoration-current/10"
             >
               Create account
             </Link>
           </p>
         </div>
       </motion.div>
-
-      {/* Reusable Styles */}
-      <style jsx global>{`
-        .input-base {
-          width: 100%;
-          background: transparent;
-          outline: none;
-          font-size: 0.875rem;
-          padding: 1rem 1rem 1rem 3.5rem;
-          color: white;
-        }
-        ::placeholder {
-          color: #444;
-        }
-      `}</style>
     </div>
   );
 };
-
-const ErrorMessage = ({ message }) => (
-  <AnimatePresence>
-    {message && (
-      <motion.p
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        className="text-red-500 text-[10px] font-bold flex items-center gap-1 mt-1 ml-1"
-      >
-        <FiAlertCircle className="shrink-0" /> {message}
-      </motion.p>
-    )}
-  </AnimatePresence>
-);
 
 export default SignIn;

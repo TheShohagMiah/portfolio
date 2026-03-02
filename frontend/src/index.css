@@ -2,7 +2,6 @@
 
 @import "tailwindcss";
 
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -45,10 +44,20 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Brand token ── */
+  --color-brand:            var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted:      var(--brand-muted);
 }
 
+/* ══════════════════════════════════════════
+   LIGHT MODE
+   Brand hue: 247.721 (blue-violet)
+══════════════════════════════════════════ */
 :root {
   --radius: 0.625rem;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -80,12 +89,24 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ── Brand — light mode (hue 247.721) ── */
+  --brand:            oklch(57.503% 0.15226 247.721);         /* base brand */
+  --brand-foreground: oklch(1 0 0);                           /* white on brand bg */
+  --brand-muted:      oklch(57.503% 0.15226 247.721 / 0.10); /* subtle tint bg */
+  --brand-border:     oklch(57.503% 0.15226 247.721 / 0.25); /* border tint */
+  --brand-glow:       oklch(57.503% 0.15226 247.721 / 0.18); /* shadow glow */
+  --brand-soft:       oklch(65% 0.13 247.721);               /* lighter for readable text */
 }
 
+/* ══════════════════════════════════════════
+   DARK MODE
+   Brand hue: 247.721 (slightly brightened)
+══════════════════════════════════════════ */
 .dark {
-  --background:oklch(19.125% 0.00002 271.152);
+  --background: oklch(19.125% 0.00002 271.152);
   --foreground: oklch(0.985 0 0);
-  --card:   oklch(0.145 0 0) ;
+  --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
@@ -114,16 +135,29 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* ── Logo Background - Dark Mode ── */
+  --logo: linear-gradient(135deg, #022c22, #047c5c);
+
+  /* ── Brand — dark mode (hue 247.721, brightened for dark bg) ── */
+  --brand:            oklch(68% 0.15 247.721);               /* brighter so it pops on dark */
+  --brand-foreground: oklch(1 0 0);
+  --brand-muted:      oklch(68% 0.15 247.721 / 0.14);
+  --brand-border:     oklch(68% 0.15 247.721 / 0.30);
+  --brand-glow:       oklch(68% 0.15 247.721 / 0.24);
+  --brand-soft:       oklch(76% 0.12 247.721);               /* even lighter for dark text use */
 }
 
+/* ══════════════════════════════════════════
+   BASE
+══════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-sans;
-    
-  font-family: "Space Grotesk", sans-serif;
+    @apply bg-background text-foreground;
+    font-family: "Space Grotesk", sans-serif;
     font-optical-sizing: auto;
     font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
@@ -131,24 +165,37 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* ══════════════════════════════════════════
+   BRAND UTILITY CLASSES
+══════════════════════════════════════════ */
+@layer utilities {
+  .bg-brand            { background-color: var(--brand); }
+  .text-brand          { color: var(--brand); }
+  .text-brand-soft     { color: var(--brand-soft); }
+  .text-brand-fg       { color: var(--brand-foreground); }
+  .border-brand        { border-color: var(--brand-border); }
+  .bg-brand-muted      { background-color: var(--brand-muted); }
+  .shadow-brand        { box-shadow: 0 4px 32px var(--brand-glow); }
+  .ring-brand          { --tw-ring-color: var(--brand); }
+
+  .hover\:bg-brand:hover        { background-color: var(--brand); }
+  .hover\:text-brand:hover      { color: var(--brand); }
+  .hover\:text-brand-soft:hover { color: var(--brand-soft); }
+  .hover\:border-brand:hover    { border-color: var(--brand-border); }
+  .hover\:bg-brand-muted:hover  { background-color: var(--brand-muted); }
 }
 
-.btn{
+/* ══════════════════════════════════════════
+   BUTTON GLOW ANIMATIONS
+══════════════════════════════════════════ */
+.btn {
   --angle: 0deg;
   --glow-color: hsl(173, 24%, 79%);
   --glow-size: 2px;
   --blur-amount: 1px;
 }
 
-
-.btn_download{
+.btn_download {
   --angle: 0deg;
   --glow-color: #00c3f4;
   --glow-size: 2px;
@@ -163,25 +210,9 @@
   border-radius: inherit;
   z-index: -1;
 }
-.btn::before{
-  content: '';
-  position: absolute;
-  inset: calc(-.5 * var(--glow-size));
-  background: conic-gradient(
-    from var(--angle),
-    var(--glow-color) 0deg,
-    var(--glow-color) 10deg,
-    transparent 20deg,
-    transparent 300deg,
-    var(--glow-color) 20deg
-  );
-  border-radius: inherit;
-  filter: blur(var(--blur-amount));
-  animation: rotate-angle 3s linear infinite;
-  z-index: -2;
-}
 
-.btn_download::before{
+.btn::before,
+.btn_download::before {
   content: '';
   position: absolute;
   inset: calc(-.5 * var(--glow-size));
@@ -204,11 +235,8 @@
   initial-value: 0deg;
   inherits: false;
 }
+
 @keyframes rotate-angle {
-  from {
-    --angle: 0deg;
-  }
-  to {
-    --angle: 360deg;
-  }
+  from { --angle: 0deg; }
+  to   { --angle: 360deg; }
 }

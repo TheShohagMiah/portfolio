@@ -9,12 +9,36 @@ import {
 } from "react-icons/lu";
 import { PiGearSixBold } from "react-icons/pi";
 import { useAdminTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const Header = ({ onMenuClick }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const { adminTheme, toggleAdminTheme } = useAdminTheme();
+  const { user, logout } = useAuth();
 
+  const getInitials = (fullName) => {
+    if (!fullName) return "";
+
+    return fullName
+      .trim() // Remove accidental leading/trailing spaces
+      .split(/\s+/) // Split by one or more spaces (handles double spaces)
+      .map((word) => word[0]) // Grab the first letter of every word
+      .join("") // Join them (e.g., ["J", "D"] -> "JD")
+      .toUpperCase(); // Ensure they are capitalized
+  };
+
+  const fullAbbreviation = getInitials(user?.fullName);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/auth/signin", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   const notifications = [
     { id: 1, text: "New message from client", time: "5 min ago", unread: true },
     {
@@ -32,7 +56,7 @@ const Header = ({ onMenuClick }) => {
   ];
 
   return (
-    <header className="h-20 bg-background/80 backdrop-blur-md border-b border-border px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-20 bg-background/20 backdrop-blur-xl border-b border-border px-6 flex items-center justify-between sticky top-0 z-30">
       {/* ── Left: Search ────────────────────────────────────────── */}
       <div className="flex items-center gap-4 flex-1">
         <button
@@ -64,7 +88,7 @@ const Header = ({ onMenuClick }) => {
         {/* Theme Toggle */}
         <button
           onClick={toggleAdminTheme}
-          className="w-10 h-10 flex items-center justify-center hover:bg-muted rounded-xl transition-all text-muted-foreground hover:text-primary"
+          className="w-10 h-10 flex items-center justify-center bg-muted rounded-xl transition-all text-primary"
         >
           {adminTheme === "dark" ? (
             <LuSunDim size={20} />
@@ -83,7 +107,7 @@ const Header = ({ onMenuClick }) => {
             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative ${
               showNotifications
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
+                : "text-primary bg-muted"
             }`}
           >
             <LuBell size={20} />
@@ -144,7 +168,7 @@ const Header = ({ onMenuClick }) => {
             className="flex items-center gap-3 p-1 rounded-xl hover:bg-muted transition-all"
           >
             <div className="w-9 h-9 bg-gradient-to-tr from-emerald-500 to-emerald-700 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-lg">
-              SM
+              {fullAbbreviation}
             </div>
             <RiArrowDownSLine
               className={`text-muted-foreground transition-transform ${showProfileMenu ? "rotate-180" : ""}`}
@@ -159,19 +183,28 @@ const Header = ({ onMenuClick }) => {
               />
               <div className="absolute right-0 mt-3 w-56 bg-popover border border-border rounded-2xl shadow-2xl z-20 p-2 animate-in fade-in slide-in-from-top-2">
                 <div className="px-3 py-2 mb-2 border-b border-border/50">
-                  <p className="text-sm font-bold truncate">Shohag Miah</p>
-                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter">
-                    Super Admin
-                  </p>
+                  <p className="text-sm font-bold truncate">{user?.fullName}</p>
+                  <a
+                    href={`mailto:${user?.email}`}
+                    className="text-[10px] text-emerald-500 font-medium underline"
+                  >
+                    {user?.email.toLowerCase()}
+                  </a>
                 </div>
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                <Link
+                  to={`/admin/profile/me/${user._id}`}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                >
                   <LuUserRoundSearch size={16} /> My Profile
-                </button>
+                </Link>
                 <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
                   <PiGearSixBold size={16} /> Settings
                 </button>
                 <div className="my-1 border-t border-border/50" />
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-all font-semibold">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-all font-semibold"
+                >
                   <RiLogoutBoxLine size={16} /> Sign Out
                 </button>
               </div>

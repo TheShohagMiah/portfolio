@@ -1,31 +1,38 @@
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { FiArrowUpRight, FiDownload, FiCode } from "react-icons/fi";
 
+/* ── stable random positions — generated once, not on every render ── */
+const STARS = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  left: `${(i * 73 + 11) % 97}%`,
+  top: `${(i * 47 + 23) % 93}%`,
+  dur: 2.5 + (i % 4) * 0.8,
+  delay: (i * 0.41) % 5,
+  size: i % 3 === 0 ? "w-2 h-2" : "w-1.5 h-1.5",
+}));
+
+const TECH = ["React", "Next.js", "Node.js", "TypeScript"];
+
+/* ── variants ── */
+const container = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.18, delayChildren: 0.25 },
+  },
+};
+const item = {
+  hidden: { y: 24, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
 const Hero = () => {
   const containerRef = useRef(null);
-
-  /* ─── Animation Variants ────────────────────────────────────────── */
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2, delayChildren: 0.3 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-    },
-  };
-
-  /* ─── Decorative element counts ─────────────────────────────────── */
-  const bubbles = Array.from({ length: 6 });
-  const stars = Array.from({ length: 12 });
 
   return (
     <div
@@ -33,196 +40,263 @@ const Hero = () => {
       id="hero"
       className="relative min-h-screen w-full overflow-hidden bg-background flex items-center justify-center antialiased"
     >
-      {/* ── Background Decorative Layer ───────────────────────────── */}
+      {/* ══ Background Layer ══ */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Grid Overlay — uses CSS vars so it respects light/dark automatically */}
+        {/* Fine grid */}
         <div
           className="absolute inset-0"
           style={{
-            backgroundSize: "50px 50px",
+            backgroundSize: "40px 40px",
             backgroundImage: `
-              linear-gradient(to right,  color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
-              linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px)
+              linear-gradient(to right,  color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
+              linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px)
             `,
           }}
         />
 
-        {/* Main Center Glow */}
+        {/* Radial vignette over grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,transparent_30%,var(--background)_100%)]" />
+
+        {/* Center glow */}
         <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.07, 0.15, 0.07] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary rounded-full blur-[120px]"
+          animate={{ scale: [1, 1.18, 1], opacity: [0.08, 0.16, 0.08] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[130px]"
+          style={{ background: "var(--brand)" }}
         />
 
-        {/* Floating Bubbles */}
-        {bubbles.map((_, i) => (
-          <motion.div
-            key={`bubble-${i}`}
-            className="absolute rounded-full bg-primary/10 blur-xl"
-            style={{
-              width: Math.random() * 100 + 50,
-              height: Math.random() * 100 + 50,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{ y: [0, -40, 0], x: [0, 20, 0], scale: [1, 1.1, 1] }}
-            transition={{
-              duration: Math.random() * 5 + 5,
-              repeat: Infinity,
-              delay: i * 0.5,
-            }}
-          />
-        ))}
+        {/* Secondary off-center glow */}
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.04, 0.09, 0.04] }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 3,
+          }}
+          className="absolute left-[65%] top-[30%] w-[400px] h-[400px] rounded-full blur-[100px]"
+          style={{ background: "var(--brand)" }}
+        />
 
-        {/* Twinkling Stars */}
-        {stars.map((_, i) => (
+        {/* Twinkling stars */}
+        {STARS.map((s) => (
           <motion.div
-            key={`star-${i}`}
-            className="absolute w-1 h-1 bg-primary rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
+            key={s.id}
+            className={`absolute ${s.size} rounded-full`}
+            style={{ left: s.left, top: s.top, background: "var(--brand)" }}
+            animate={{ opacity: [0, 0.8, 0], scale: [0, 1.4, 0] }}
             transition={{
-              duration: Math.random() * 3 + 2,
+              duration: s.dur,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: s.delay,
+              ease: "easeInOut",
             }}
           />
         ))}
       </div>
 
-      {/* ── Main Content ──────────────────────────────────────────── */}
+      {/* ══ Main Content ══ */}
       <motion.div
-        variants={containerVariants}
+        variants={container}
         initial="hidden"
         animate="visible"
-        className="container relative z-10 mx-auto px-6 pt-20"
+        className="relative z-10 w-full max-w-4xl mx-auto px-6 pt-24 pb-16 flex flex-col items-center text-center gap-8"
       >
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          {/* Status Badge */}
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border backdrop-blur-md mb-4"
-          >
-            {/* Availability dot — accent color intentionally kept outside token system */}
+        {/* ── Status Badge ── */}
+        <motion.div variants={item}>
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-secondary/60 border border-border backdrop-blur-md">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
               Available for new projects
             </span>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          {/* Main Title */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <h1 className="text-5xl md:text-8xl font-black tracking-tight text-foreground leading-[1.1]">
-              Shohag{" "}
-              <span className="text-muted-foreground italic font-serif">
+        {/* ── Main Title ── */}
+        <motion.div variants={item} className="space-y-5">
+          <h1 className="text-6xl md:text-[90px] font-black tracking-tight text-foreground leading-[1.0]">
+            Shohag{" "}
+            <span className="relative inline-block">
+              <span className="text-muted-foreground italic font-serif font-light">
                 Miah
               </span>
-            </h1>
-            <div className="flex items-center justify-center gap-3">
-              <motion.span
-                initial={{ width: 0 }}
-                whileInView={{ width: 32 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="h-px bg-primary"
-              />
-              <h2 className="text-lg md:text-2xl font-medium text-primary tracking-wide uppercase">
-                Full Stack Developer
-              </h2>
-              <motion.span
-                initial={{ width: 0 }}
-                whileInView={{ width: 32 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="h-px bg-primary"
-              />
-            </div>
-          </motion.div>
-
-          {/* Description */}
-          <motion.p
-            variants={itemVariants}
-            className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
-          >
-            Building the future of the web with 3.5 years of experience.
-            Currently architecting scalable solutions at{" "}
-            <span className="text-foreground font-semibold underline decoration-primary/30 underline-offset-4">
-              Philips University
-            </span>
-            .
-          </motion.p>
-
-          {/* Action Buttons */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-          >
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="#projects"
-              className="group relative w-full sm:w-auto flex items-center justify-center gap-2 bg-foreground text-background px-6 py-3 rounded-2xl font-bold transition-all shadow-lg hover:shadow-primary/20"
-            >
-              View My Work
-              <FiArrowUpRight className="text-xl transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-            </motion.a>
-
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="/resume.pdf"
-              target="_blank"
-              className="relative w-full sm:w-auto flex items-center justify-center gap-2 bg-secondary/50 border border-border backdrop-blur-xl px-6 py-3 rounded-2xl font-bold transition-all hover:bg-secondary hover:border-primary/30"
-            >
-              <FiDownload />
-              Download CV
-            </motion.a>
-          </motion.div>
-
-          {/* Tech Peek */}
-          <motion.div
-            variants={itemVariants}
-            className="pt-12 flex flex-col items-center gap-4"
-          >
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em]">
-              Tech Stack Spotlight
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 text-2xl text-muted-foreground/50">
-              <motion.div
-                whileHover={{ color: "var(--color-primary)", rotate: 15 }}
+              {/* animated underline */}
+              <motion.svg
+                viewBox="0 0 240 10"
+                fill="none"
+                className="absolute -bottom-1 left-0 w-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
               >
-                <FiCode className="cursor-help" />
-              </motion.div>
-              <span className="hidden sm:block h-6 w-px bg-border" />
-              {["React", "Next.js", "Node.js"].map((tech) => (
-                <motion.span
-                  key={tech}
-                  whileHover={{ y: -5, color: "var(--color-foreground)" }}
-                  className="text-sm font-mono cursor-default px-2"
-                >
-                  {tech}
-                </motion.span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+                <motion.path
+                  d="M2 7 C40 2, 80 9, 120 5 S190 1, 238 6"
+                  stroke="var(--brand)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 1.2, duration: 0.9, ease: "easeOut" }}
+                />
+              </motion.svg>
+            </span>
+          </h1>
+
+          {/* Role row */}
+          <div className="flex items-center justify-center gap-4">
+            <motion.span
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 1.1, duration: 0.7, ease: "easeOut" }}
+              className="block h-px w-8 origin-right"
+              style={{ background: "var(--brand)" }}
+            />
+            <h2
+              className="text-base md:text-xl font-semibold tracking-[0.25em] uppercase"
+              style={{ color: "var(--brand)" }}
+            >
+              Full Stack Developer
+            </h2>
+            <motion.span
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 1.1, duration: 0.7, ease: "easeOut" }}
+              className="block h-px w-8 origin-left"
+              style={{ background: "var(--brand)" }}
+            />
+          </div>
+        </motion.div>
+
+        {/* ── Description ── */}
+        <motion.p
+          variants={item}
+          className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
+        >
+          Building the future of the web with{" "}
+          <span className="text-foreground font-semibold">3.5 years</span> of
+          experience. Currently architecting scalable solutions at{" "}
+          <span
+            className="font-semibold underline underline-offset-4 decoration-[var(--brand)]/40"
+            style={{ color: "var(--brand-soft, var(--brand))" }}
+          >
+            Philips University
+          </span>
+          .
+        </motion.p>
+
+        {/* ── Action Buttons ── */}
+        <motion.div
+          variants={item}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
+        >
+          {/* Primary */}
+          <motion.a
+            href="#projects"
+            whileHover="hover"
+            whileTap={{ scale: 0.97 }}
+            className="group relative w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold overflow-hidden shadow-xl transition-shadow"
+            style={{
+              background: "var(--brand)",
+              color: "var(--brand-foreground, #fff)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.boxShadow =
+                "0 8px 40px var(--brand-glow, rgba(139,92,246,0.35))")
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "")}
+          >
+            {/* shimmer */}
+            <motion.div
+              variants={{ hover: { x: "200%" }, initial: { x: "-200%" } }}
+              initial="initial"
+              transition={{ duration: 0.55, ease: "easeInOut" }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
+            />
+            <span className="relative z-10 text-sm">View My Work</span>
+            <motion.span
+              variants={{ hover: { x: 3, y: -3 } }}
+              className="relative z-10"
+            >
+              <FiArrowUpRight size={18} />
+            </motion.span>
+          </motion.a>
+
+          {/* Secondary */}
+          <motion.a
+            href="/resume.pdf"
+            target="_blank"
+            whileHover="hover"
+            whileTap={{ scale: 0.97 }}
+            className="group relative w-full sm:w-auto flex items-center justify-center gap-3 bg-secondary/40 border border-border backdrop-blur-xl px-8 py-4 rounded-2xl font-bold text-sm text-foreground transition-all duration-300 hover:border-[var(--brand)] hover:bg-[var(--brand-muted)]"
+          >
+            <motion.span
+              variants={{ hover: { y: [0, -3, 0] } }}
+              transition={{ repeat: Infinity, duration: 0.9 }}
+            >
+              <FiDownload size={17} />
+            </motion.span>
+            <span>Download CV</span>
+          </motion.a>
+        </motion.div>
+
+        {/* ── Tech Stack ── */}
+        <motion.div
+          variants={item}
+          className="pt-8 flex flex-col items-center gap-5 w-full"
+        >
+          <div className="flex items-center gap-4 w-full max-w-xs">
+            <div className="flex-1 h-px bg-border" />
+            <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.35em] whitespace-nowrap">
+              Tech Stack
+            </p>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-2">
+            <motion.div
+              whileHover={{ rotate: 20, scale: 1.2, color: "var(--brand)" }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="text-muted-foreground/40 cursor-help mr-1"
+            >
+              <FiCode size={18} />
+            </motion.div>
+
+            {TECH.map((tech, i) => (
+              <motion.span
+                key={tech}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2 + i * 0.08 }}
+                whileHover={{ y: -3, color: "var(--brand)" }}
+                className="px-3 py-1.5 rounded-xl bg-secondary/50 border border-border text-[11px] font-mono text-muted-foreground cursor-default transition-colors duration-200 hover:border-[var(--brand)] hover:bg-[var(--brand-muted)]"
+              >
+                {tech}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* ── Scroll Indicator ──────────────────────────────────────── */}
+      {/* ══ Scroll Indicator ══ */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 2, duration: 1 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2"
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.2, duration: 1 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
+        <span className="text-[8px] uppercase tracking-[0.4em] text-muted-foreground/40 font-bold">
+          Scroll
+        </span>
         <motion.div
           animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-1 h-12 rounded-full bg-gradient-to-b from-primary to-transparent"
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-0.5 h-12 rounded-full"
+          style={{
+            background: "linear-gradient(to bottom, var(--brand), transparent)",
+          }}
         />
       </motion.div>
     </div>

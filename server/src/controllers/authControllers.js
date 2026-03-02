@@ -89,7 +89,7 @@ export const userLogin = asyncHandler(async (req, res) => {
   }
   // 4. Generate Token
   const token = jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: user.role, name: user.name },
     process.env.JWT_SECRET_KEY,
     {
       expiresIn: "7d",
@@ -188,5 +188,13 @@ export const verifyEmail = asyncHandler(async (req, res) => {
       fullName: user.fullName,
       email: user.email,
     },
+  });
+});
+
+export const isAuthenticated = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  res.status(200).json({
+    success: true,
+    user,
   });
 });

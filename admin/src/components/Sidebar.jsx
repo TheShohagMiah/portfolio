@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { RiLightbulbFlashLine, RiLogoutBoxRLine } from "react-icons/ri";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FiGrid, FiZap } from "react-icons/fi";
 import { MdKeyboardArrowDown, MdDesignServices } from "react-icons/md";
 import { LuUserPen } from "react-icons/lu";
 import { AiOutlineFundProjectionScreen } from "react-icons/ai";
 import { GrContact } from "react-icons/gr";
 import { TbUserStar } from "react-icons/tb";
+import { useAuth } from "../contexts/AuthContext";
 
 const Sidebar = ({ onClose }) => {
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
 
   const sidebarItems = [
     {
@@ -74,6 +77,15 @@ const Sidebar = ({ onClose }) => {
     setOpenSubmenu(openSubmenu === index ? null : index);
   };
 
+  const handleLogOut = async () => {
+    try {
+      await logout();
+      navigate("/auth/signin", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <div className="bg-card text-muted-foreground h-full flex flex-col transition-colors duration-500">
       {/* ── Header ────────────────────────────────────────── */}
@@ -84,12 +96,18 @@ const Sidebar = ({ onClose }) => {
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-foreground text-sm uppercase tracking-widest">
-              Shohag Miah
+              {user.fullName || "Guest User"}
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-semibold text-emerald-500/80 uppercase">
-                Super Admin
+              <span
+                className={`text-[10px] font-semibold uppercase ${
+                  user?.role === "admin"
+                    ? "text-emerald-500/80"
+                    : "text-blue-500/80"
+                }`}
+              >
+                {user?.role}
               </span>
             </div>
           </div>
@@ -204,7 +222,7 @@ const Sidebar = ({ onClose }) => {
       {/* ── Footer ───────────────────────────────────── */}
       <div className="p-4 bg-gradient-to-t from-background to-transparent mt-auto">
         <button
-          onClick={() => console.log("Signing out...")}
+          onClick={handleLogOut}
           className="group w-full flex items-center justify-center gap-3 px-3 py-3 rounded-xl border border-border text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-300"
         >
           <RiLogoutBoxRLine

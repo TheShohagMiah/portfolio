@@ -12,19 +12,36 @@ export const projectValidationSchema = z.object({
     .optional(),
 
   category: z.enum(["Full Stack", "Frontend", "Backend"], {
-    error_map: () => ({
-      message: "Category must be Full Stack, Frontend or Backend",
+    errorMap: () => ({
+      message: "Category must be Full Stack, Frontend, or Backend",
+    }),
+  }),
+
+  status: z.enum(["published", "pending", "draft"], {
+    errorMap: () => ({
+      message: "Status must be published, pending, or draft",
     }),
   }),
 
   technologies: z.preprocess(
-    (val) => (typeof val === "string" ? JSON.parse(val) : val),
+    (val) => {
+      if (typeof val !== "string") return val;
+      try {
+        return JSON.parse(val);
+      } catch {
+        return val;
+      }
+    },
     z.array(z.string()).min(1, "At least one technology required"),
   ),
 
-  github: z.string().url().or(z.string().startsWith("#")),
-  live: z.string().url().or(z.string().startsWith("#")),
-  order: z.preprocess((val) => Number(val), z.number().optional()),
+  githubRepo: z.string().url().or(z.string().startsWith("#")),
+  liveLink: z.string().url().or(z.string().startsWith("#")),
+
+  order: z.preprocess(
+    (val) => (val === undefined || val === "" ? undefined : Number(val)),
+    z.number().optional(),
+  ),
 });
 
 export const updateProjectSchema = projectValidationSchema.partial();

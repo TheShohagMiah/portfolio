@@ -27,16 +27,6 @@ export const heroValidationSchema = z.object({
     )
     .default("/works"),
 
-  socialLinks: z
-    .array(
-      z.object({
-        platform: z.string().min(1, "Platform name is required"),
-        url: z.string().url("Must be a valid URL"),
-      }),
-    )
-    .optional()
-    .default([]),
-
   isActive: z.boolean().default(true),
 });
 
