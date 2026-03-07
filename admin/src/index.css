@@ -63,7 +63,8 @@
 
 /* ══════════════════════════════════════════
    LIGHT MODE
-   Brand hue: ~162 (emerald-green, matches #047857)
+   Brand hue: 259.05 (blue), lightness lowered
+   so it reads clearly on white backgrounds.
 ══════════════════════════════════════════ */
 :root {
   --radius: 0.625rem;
@@ -79,7 +80,7 @@
   --secondary: oklch(88.074% 0.00217 14.655 / 0.967);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(47.12% 0.00005 271.152);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -101,21 +102,23 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Logo Background - Light Mode */
-  --logo-bg: linear-gradient(145deg, #065f46, #047857);
 
-  /* ── Brand — light mode (emerald, hue ~162) ── */
-  /* Matches #047857 (emerald-700) = ~oklch(52% 0.14 162) */
-  --brand:            oklch(52% 0.14 162);
-  --brand-foreground: oklch(1 0 0);                     /* white on brand bg */
-  --brand-muted:      oklch(52% 0.14 162 / 0.10);       /* subtle tint bg */
-  --brand-border:     oklch(52% 0.14 162 / 0.25);       /* border tint */
-  --brand-glow:       oklch(52% 0.14 162 / 0.18);       /* shadow glow */
-  --brand-soft:       oklch(45% 0.13 162);              /* slightly darker for light bg text */
+  /* ── Brand — light mode (blue, hue 259.05) ──
+     Lightness pulled down to ~46% so the blue
+     has enough contrast on a white background
+     (WCAG AA: ~4.6:1).                         */
+  --brand:            oklch(46% 0.21664 259.05);
+  --brand-foreground: oklch(1 0 0);                       /* white text on brand bg   */
+  --brand-muted:      oklch(46% 0.21664 259.05 / 0.10);  /* subtle tint background   */
+  --brand-border:     oklch(46% 0.21664 259.05 / 0.25);  /* tinted border            */
+  --brand-glow:       oklch(46% 0.21664 259.05 / 0.18);  /* shadow / glow            */
+  --brand-soft:       oklch(40% 0.20 259.05);            /* darker text on light bg  */
 }
 
 /* ══════════════════════════════════════════
    DARK MODE
-   Brand hue: ~162 (brightened for dark bg)
+   Brand hue: 259.05 (blue), lightness raised
+   so it pops clearly on a dark background.
 ══════════════════════════════════════════ */
 .dark {
   --background: oklch(19.125% 0.00002 271.152);
@@ -151,15 +154,16 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   /* Logo Background - Dark Mode */
-  --logo-bg: linear-gradient(135deg, #022c22, #047c5c);
 
-  /* ── Brand — dark mode (emerald, brighter for dark bg) ── */
-  --brand:            oklch(65% 0.15 162);              /* brighter so it pops on dark */
+  /* ── Brand — dark mode (blue, hue 259.05) ──
+     Original value kept; brighter lightness
+     ensures visibility on dark surfaces.       */
+  --brand:            oklch(55.779% 0.21664 259.05);
   --brand-foreground: oklch(1 0 0);
-  --brand-muted:      oklch(65% 0.15 162 / 0.14);
-  --brand-border:     oklch(65% 0.15 162 / 0.30);
-  --brand-glow:       oklch(65% 0.15 162 / 0.24);
-  --brand-soft:       oklch(75% 0.12 162);              /* lighter for readable text on dark */
+  --brand-muted:      oklch(55.779% 0.21664 259.05 / 0.14);
+  --brand-border:     oklch(55.779% 0.21664 259.05 / 0.30);
+  --brand-glow:       oklch(55.779% 0.21664 259.05 / 0.24);
+  --brand-soft:       oklch(72% 0.18 259.05);            /* lighter text on dark bg  */
 }
 
 /* ══════════════════════════════════════════
@@ -183,8 +187,8 @@
 
 /* ══════════════════════════════════════════
    BRAND UTILITY CLASSES
-   Use these instead of hardcoded emerald-*
-   so light/dark both look great.
+   Use these instead of hardcoded color values
+   so light/dark both look great automatically.
 ══════════════════════════════════════════ */
 @layer utilities {
   .bg-brand            { background-color: var(--brand); }

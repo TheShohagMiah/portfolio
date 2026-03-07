@@ -10,44 +10,65 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 
-/* ── contact items ── */
+/* ── contact items ────────────────────────────────────────────── */
 const contactItems = [
   {
     icon: FiMail,
     label: "Email",
-    value: "your.email@example.com",
-    href: "mailto:your.email@example.com",
+    value: "shohagmiah7474@gmail.com",
+    href: "mailto:shohagmiah7474@gmail.com",
   },
   {
     icon: FiPhone,
     label: "Phone",
-    value: "+357 00 000 000",
-    href: "tel:+35700000000",
+    value: "+357 94 566 173",
+    href: "tel:+35794566173",
   },
-  { icon: FiMapPin, label: "Location", value: "Nicosia, Cyprus", href: "#" },
+  {
+    icon: FiMapPin,
+    label: "Location",
+    value: "Nicosia, Cyprus",
+    href: "#",
+  },
 ];
 
-/* ── shared input classes ── */
-const inputCls = (focused) =>
+/* ── shared input classes ─────────────────────────────────────── */
+const inputCls = (focused, hasError) =>
   `w-full bg-background border rounded-2xl px-5 py-3.5 text-sm text-foreground
    placeholder:text-muted-foreground/50 outline-none transition-all duration-200
    ${
-     focused
-       ? "border-[var(--brand)] shadow-[0_0_0_3px_var(--brand-muted)]"
-       : "border-border hover:border-[var(--brand-border)]"
+     hasError
+       ? "border-red-500/60 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+       : focused
+         ? "border-[var(--brand)] shadow-[0_0_0_3px_var(--brand-muted)]"
+         : "border-border hover:border-[var(--brand-border)]"
    }`;
 
-/* ── Field wrapper ── */
-const Field = ({ label, children }) => (
+/* ── Field wrapper ────────────────────────────────────────────── */
+const Field = ({ label, error, children }) => (
   <div className="space-y-2">
     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
       {label}
     </label>
     {children}
+    {/* ✅ Fix 3: field-level error shown under each input */}
+    <AnimatePresence>
+      {error && (
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          className="flex items-center gap-1.5 text-red-500 text-[11px] font-medium ml-1"
+        >
+          <FiAlertCircle className="size-3 shrink-0" />
+          {error}
+        </motion.p>
+      )}
+    </AnimatePresence>
   </div>
 );
 
-/* ── variants ── */
+/* ─��� variants ─────────────────────────────────────────────────── */
 const stagger = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
@@ -61,28 +82,87 @@ const slideUp = {
   },
 };
 
-/* ══ Component ══ */
+/* ══ Component ══════════════════════════════════════════════════ */
 const Contact = () => {
+  // ── State ────────────────────────────────────────────────────
   const [focused, setFocused] = useState(null);
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      setSent(true);
-    }, 1600);
-    setTimeout(() => setSent(false), 4000);
+  // ✅ Fix 1: controlled form state
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+
+  // ✅ Fix 3: field-level + global errors
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [globalError, setGlobalError] = useState("");
+
+  // ── Handlers ───────────────��─────────────────────────────────
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear error on typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
+
+  // ✅ Fix 2: real API call instead of fake setTimeout
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("loading");
+    setFieldErrors({});
+    setGlobalError("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // ── Success ─────────────────────────────────────────────
+        setStatus("success");
+        setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+        // Reset back to idle after 4s
+        setTimeout(() => setStatus("idle"), 4000);
+      } else if (res.status === 422 && data.errors) {
+        // ── Zod validation errors ────────────────────────────────
+        const mapped = {};
+        data.errors.forEach(({ field, message }) => {
+          mapped[field] = message;
+        });
+        setFieldErrors(mapped);
+        setStatus("idle");
+      } else {
+        // ── Server error ─────────────────────────────────────────
+        setGlobalError(
+          data.message || "Something went wrong. Please try again.",
+        );
+        setStatus("error");
+      }
+    } catch {
+      setGlobalError("Network error. Please check your connection.");
+      setStatus("error");
+    }
+  };
+
+  const isLoading = status === "loading";
+  const isSent = status === "success";
 
   return (
     <section
       id="contact"
       className="py-24 bg-background relative overflow-hidden"
     >
-      {/* ambient glows */}
+      {/* ── Ambient Glows ─────────────────────────────────────── */}
       <motion.div
         animate={{ scale: [1, 1.1, 1], opacity: [0.06, 0.12, 0.06] }}
         transition={{ duration: 8, repeat: Infinity }}
@@ -96,7 +176,7 @@ const Contact = () => {
 
       <div className="container mx-auto px-6">
         <div className="max-w-7xl mx-auto">
-          {/* ══ Header ══ */}
+          {/* ══ Header ══════════════════════════════════════════ */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -129,7 +209,7 @@ const Contact = () => {
           </motion.div>
 
           <div className="grid lg:grid-cols-12 gap-10 items-start">
-            {/* ══ LEFT — Contact Form ══ */}
+            {/* ══ LEFT — Contact Form ═════════════════════════ */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -155,78 +235,159 @@ const Contact = () => {
                 style={{ background: "var(--brand)" }}
               />
 
-              <form className="relative space-y-6" onSubmit={handleSubmit}>
+              <form
+                className="relative space-y-6"
+                onSubmit={handleSubmit}
+                noValidate
+              >
+                {/* Name + Email */}
                 <div className="grid md:grid-cols-2 gap-5">
-                  <Field label="Your Name">
+                  <Field label="Your Name" error={fieldErrors.name}>
                     <input
                       type="text"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
                       placeholder="John Doe"
-                      className={inputCls(focused === "name")}
+                      className={inputCls(
+                        focused === "name",
+                        !!fieldErrors.name,
+                      )}
                       onFocus={() => setFocused("name")}
                       onBlur={() => setFocused(null)}
                     />
                   </Field>
-                  <Field label="Email Address">
+
+                  <Field label="Email Address" error={fieldErrors.email}>
                     <input
                       type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
                       placeholder="john@example.com"
-                      className={inputCls(focused === "email")}
+                      className={inputCls(
+                        focused === "email",
+                        !!fieldErrors.email,
+                      )}
                       onFocus={() => setFocused("email")}
                       onBlur={() => setFocused(null)}
                     />
                   </Field>
                 </div>
 
-                <Field label="Subject">
-                  <input
-                    type="text"
-                    placeholder="Project Inquiry"
-                    className={inputCls(focused === "subject")}
-                    onFocus={() => setFocused("subject")}
-                    onBlur={() => setFocused(null)}
-                  />
-                </Field>
+                {/* ✅ Fix 4: Phone + Subject row */}
+                <div className="grid md:grid-cols-2 gap-5">
+                  <Field
+                    label={
+                      <>
+                        Phone{" "}
+                        <span className="normal-case tracking-normal opacity-40 font-normal">
+                          (optional)
+                        </span>
+                      </>
+                    }
+                    error={fieldErrors.phone}
+                  >
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      placeholder="+1 234 567 8900"
+                      className={inputCls(
+                        focused === "phone",
+                        !!fieldErrors.phone,
+                      )}
+                      onFocus={() => setFocused("phone")}
+                      onBlur={() => setFocused(null)}
+                    />
+                  </Field>
 
-                <Field label="Message">
+                  <Field label="Subject" error={fieldErrors.subject}>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={form.subject}
+                      onChange={handleChange}
+                      placeholder="Project Inquiry"
+                      className={inputCls(
+                        focused === "subject",
+                        !!fieldErrors.subject,
+                      )}
+                      onFocus={() => setFocused("subject")}
+                      onBlur={() => setFocused(null)}
+                    />
+                  </Field>
+                </div>
+
+                {/* Message */}
+                <Field label="Message" error={fieldErrors.message}>
                   <textarea
                     rows={5}
+                    name="message"
+                    value={form.message}
+                    onChange={handleChange}
                     placeholder="Tell me about your project..."
-                    className={`${inputCls(focused === "message")} resize-none`}
+                    className={`${inputCls(
+                      focused === "message",
+                      !!fieldErrors.message,
+                    )} resize-none`}
                     onFocus={() => setFocused("message")}
                     onBlur={() => setFocused(null)}
                   />
                 </Field>
 
-                {/* Submit button */}
+                {/* Global Error Banner */}
+                <AnimatePresence>
+                  {status === "error" && globalError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="flex items-center gap-3 bg-red-500/5 border border-red-500/20 rounded-2xl px-5 py-3"
+                    >
+                      <FiAlertCircle className="text-red-500 shrink-0 size-4" />
+                      <p className="text-sm text-red-500">{globalError}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Submit Button */}
                 <motion.button
                   type="submit"
-                  disabled={sending || sent}
-                  whileHover={!sent && !sending ? { scale: 1.02, y: -1 } : {}}
-                  whileTap={!sent && !sending ? { scale: 0.98 } : {}}
-                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-sm tracking-wide shadow-brand overflow-hidden transition-opacity duration-200 disabled:cursor-not-allowed"
+                  disabled={isLoading || isSent}
+                  whileHover={
+                    !isSent && !isLoading ? { scale: 1.02, y: -1 } : {}
+                  }
+                  whileTap={!isSent && !isLoading ? { scale: 0.98 } : {}}
+                  className="group relative flex items-center gap-3 px-10 py-4 rounded-2xl font-bold text-sm tracking-wide overflow-hidden transition-all duration-300 disabled:cursor-not-allowed"
                   style={{
-                    background: sent ? "#10b981" : "var(--brand)",
+                    background: isSent ? "#10b981" : "var(--brand)",
                     color: "var(--brand-foreground, #fff)",
+                    boxShadow: isSent
+                      ? "0 8px 24px rgba(16,185,129,0.3)"
+                      : "0 8px 24px var(--brand-glow)",
                   }}
                 >
                   <AnimatePresence mode="wait">
-                    {sent ? (
+                    {isSent ? (
                       <motion.span
                         key="done"
                         className="flex items-center gap-2"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
                       >
-                        <FiCheck size={16} /> Message Sent!
+                        <FiCheck size={16} />
+                        Message Sent!
                       </motion.span>
-                    ) : sending ? (
+                    ) : isLoading ? (
                       <motion.span
                         key="sending"
                         className="flex items-center gap-2"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
                       >
                         <motion.span
                           animate={{ rotate: 360 }}
@@ -245,7 +406,7 @@ const Contact = () => {
                         className="flex items-center gap-2"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
                       >
                         Send Message
                         <FiSend
@@ -259,7 +420,7 @@ const Contact = () => {
               </form>
             </motion.div>
 
-            {/* ══ RIGHT — Info ══ */}
+            {/* ══ RIGHT — Info ════════════════════════════════ */}
             <motion.div
               variants={stagger}
               initial="hidden"
@@ -311,7 +472,7 @@ const Contact = () => {
                     <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-muted-foreground/60">
                       {item.label}
                     </p>
-                    <p className="font-semibold text-sm text-foreground mt-0.5">
+                    <p className="font-semibold text-sm text-foreground mt-0.5 group-hover:text-[var(--brand)] transition-colors">
                       {item.value}
                     </p>
                   </div>
@@ -327,9 +488,7 @@ const Contact = () => {
                     "linear-gradient(135deg, var(--brand) 0%, oklch(0.38 0.22 293) 100%)",
                 }}
               >
-                {/* glow blob */}
                 <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-white/10 blur-[40px] pointer-events-none" />
-                {/* watermark */}
                 <FiMessageSquare
                   size={90}
                   className="absolute -bottom-3 -right-3 text-white opacity-[0.08]"
@@ -347,7 +506,7 @@ const Contact = () => {
                     during business hours."
                   </p>
                   <motion.a
-                    href="#"
+                    href="https://www.linkedin.com/in/shohag-miah-a484a93b2/"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     className="block text-center py-3 rounded-2xl font-bold text-sm transition-colors duration-200"

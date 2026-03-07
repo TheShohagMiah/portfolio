@@ -91,7 +91,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* ── Brand — light mode (hue 247.721) ── */
-  --brand:            oklch(57.503% 0.15226 247.721);         /* base brand */
+  --brand:            #006aef;         /* base brand */
   --brand-foreground: oklch(1 0 0);                           /* white on brand bg */
   --brand-muted:      oklch(57.503% 0.15226 247.721 / 0.10); /* subtle tint bg */
   --brand-border:     oklch(57.503% 0.15226 247.721 / 0.25); /* border tint */
@@ -140,7 +140,7 @@
   --logo: linear-gradient(135deg, #022c22, #047c5c);
 
   /* ── Brand — dark mode (hue 247.721, brightened for dark bg) ── */
-  --brand:            oklch(68% 0.15 247.721);               /* brighter so it pops on dark */
+  --brand:            oklch(55.779% 0.21664 259.05);               /* brighter so it pops on dark */
   --brand-foreground: oklch(1 0 0);
   --brand-muted:      oklch(68% 0.15 247.721 / 0.14);
   --brand-border:     oklch(68% 0.15 247.721 / 0.30);

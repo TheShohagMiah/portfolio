@@ -11,6 +11,7 @@ import heroRouter from "./routes/heroRoutes.js";
 import aboutRouter from "./routes/aboutRoutes.js";
 import serviceRouter from "./routes/serviceRoutes.js";
 import projectRouter from "./routes/projectRoutes.js";
+import contactRouter from "./routes/contactRoutes.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/hero", heroRouter);
 app.use("/api/about", aboutRouter);
 app.use("/api/services", serviceRouter);
 app.use("/api/projects", projectRouter);
+app.use("/api/contact", contactRouter);
 
 // --- 404 Handler ---
 app.use((req, res, next) => {

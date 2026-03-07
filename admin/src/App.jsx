@@ -19,6 +19,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import Profile from "./pages/profile/Profile";
 import EditProject from "./pages/project/EditProject";
+import Messages from "./pages/contact/Messages";
 
 const App = () => {
   return (
@@ -59,6 +60,7 @@ const App = () => {
           <Route path="projects/edit/:id" element={<EditProject />} />
           <Route path="services/new" element={<AddService />} />
           <Route path="contact" element={<ContactManagement />} />
+          <Route path="messages" element={<Messages />} />
           <Route path="profile/me/:id" element={<Profile />} />
         </Route>
 

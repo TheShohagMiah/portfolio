@@ -47,11 +47,69 @@ export const createProject = asyncHandler(async (req, res) => {
 
 // @desc    Get All Projects
 export const getAllProjects = asyncHandler(async (req, res) => {
-  const projects = await Project.find({});
+  const {
+    search,
+    category,
+    status,
+    technologies,
+    sortBy = "createdAt",
+    order = "desc",
+    page = 1,
+    limit = 5,
+  } = req.query;
+
+  // ========================
+  // 🔍 SEARCH + 🔴 FILTER
+  // ========================
+  const filter = {};
+
+  if (search) {
+    filter.title = { $regex: search, $options: "i" };
+  }
+
+  if (category) {
+    filter.category = category;
+  }
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (technologies) {
+    const techArray = technologies.split(",").map((t) => t.trim());
+    filter.technologies = { $in: techArray };
+  }
+
+  // ========================
+  // 🟡 SORT
+  // ========================
+  const validSortFields = ["createdAt", "updatedAt", "order", "title"];
+
+  const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortOrder = order === "asc" ? 1 : -1;
+  const sortObj = { [sortField]: sortOrder };
+
+  // ========================
+  // 🟢 PAGINATION
+  // ========================
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 5;
+  const skip = (pageNum - 1) * limitNum;
+
+  const total = await Project.countDocuments(filter);
+
+  const projects = await Project.find(filter)
+    .sort(sortObj)
+    .skip(skip)
+    .limit(limitNum)
+    .select("-__v");
 
   res.status(200).json({
     success: true,
+    total,
     count: projects.length,
+    page: pageNum,
+    totalPages: Math.ceil(total / limitNum),
     data: projects,
   });
 });

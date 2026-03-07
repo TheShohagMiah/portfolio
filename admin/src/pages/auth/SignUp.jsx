@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiArrowRight,
   FiGithub,
-  FiAlertCircle,
   FiChrome,
   FiEye,
   FiEyeOff,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,15 +17,20 @@ import SocialButton from "../../components/shared/SocialButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "../../validators/auth/authValidations";
 
+// ✅ SAME COLORS AS YOUR SIGN IN (white + dark theme)
 export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl bg-white/5 border text-sm text-white
-   placeholder:text-gray-500
+  `w-full px-4 py-3 rounded-xl text-sm transition-all duration-200
+   bg-gray-100 border border-gray-200 text-gray-900 placeholder:text-gray-400
+   dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-gray-500
    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-   transition-all duration-200
-   ${hasError ? "border-red-500 ring-red-500/10" : "border-white/10 hover:border-white/30"}`;
+   ${hasError ? "border-red-500 ring-red-500/10" : "hover:border-primary/30"}`;
 
 // ✅ Reusable password input with show/hide toggle
-const PasswordInput = ({ hasError, ...props }) => {
+const PasswordInput = ({
+  hasError,
+  label = "Toggle password visibility",
+  ...props
+}) => {
   const [show, setShow] = useState(false);
 
   return (
@@ -38,10 +43,10 @@ const PasswordInput = ({ hasError, ...props }) => {
       <button
         type="button"
         onClick={() => setShow((prev) => !prev)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1"
-        tabIndex={-1} // don't interrupt tab flow
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+        aria-label={label}
       >
-        {show ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+        {show ? <FiEyeOff size={18} /> : <FiEye size={18} />}
       </button>
     </div>
   );
@@ -49,6 +54,9 @@ const PasswordInput = ({ hasError, ...props }) => {
 
 const SignUp = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [apiError, setApiError] = useState("");
+  const [successBanner, setSuccessBanner] = useState(false);
+
   const navigate = useNavigate();
 
   const {
@@ -56,12 +64,18 @@ const SignUp = () => {
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(registerSchema), mode: "onBlur" });
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+  });
 
   const password = watch("password");
 
   const onSubmit = async (data) => {
+    setApiError("");
+
     try {
       const response = await axios.post(
         "http://localhost:5000/api/auth/register",
@@ -71,51 +85,64 @@ const SignUp = () => {
 
       if (response.data?.success) {
         toast.success(response.data.message || "OTP sent to your email!");
+        setSuccessBanner(true);
+
         reset();
         setTimeout(() => {
+          setSuccessBanner(false);
           navigate("/auth/verify-account", { state: { email: data.email } });
-        }, 1500);
+        }, 1200);
+      } else {
+        const msg = response.data?.message || "Registration failed";
+        setApiError(msg);
+        toast.error(msg);
       }
     } catch (error) {
-      const backendMessage = error.response?.data?.message;
-      toast.error(backendMessage || "Registration failed");
+      const backend = error.response?.data;
+
+      const backendMessage = backend?.message || "Registration failed";
+      setApiError(backendMessage);
+      toast.error(backendMessage);
+
+      // Optional: map backend field errors -> RHF fields if API provides them
+      if (backend?.errors && typeof backend.errors === "object") {
+        Object.entries(backend.errors).forEach(([key, value]) => {
+          setError(key, { type: "server", message: String(value) });
+        });
+      }
     }
   };
 
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
+  const handleMouseMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
 
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen w-full flex items-center justify-center p-4 transition-colors duration-300
+                 bg-white text-gray-900 dark:bg-[#050505] dark:text-white overflow-hidden"
     >
-      {/* Dynamic Background */}
+      {/* ✅ SAME BACKGROUND GLOW AS SIGN IN */}
       <div className="fixed inset-0 pointer-events-none">
         <div
-          className="absolute inset-0 z-0 transition-opacity duration-500 opacity-50"
+          className="absolute inset-0 z-0 transition-opacity duration-500 opacity-20 dark:opacity-40"
           style={{
-            background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
+            background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
           }}
         />
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px]" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-5xl grid lg:grid-cols-5 gap-4 relative z-10"
       >
-        {/* LEFT: Branding */}
-        <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-[2.5rem] p-10 flex flex-col justify-between overflow-hidden relative group">
-          <div className="relative z-10">
-            <motion.div
-              whileHover={{ rotate: 90 }}
-              className="w-12 h-12 bg-primary text-black rounded-2xl flex items-center justify-center font-black text-xl mb-12 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-            >
-              S.
-            </motion.div>
+        {/* ✅ LEFT BRANDING (sign-in style card) */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 shadow-2xl dark:bg-white/[0.02] dark:border-white/5 dark:backdrop-blur-2xl rounded-[2.5rem] p-10 flex flex-col justify-between overflow-hidden">
+          <div>
+            <div className="inline-block px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-black tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-8">
+              CREATE ACCOUNT
+            </div>
+
             <h1 className="text-5xl font-bold tracking-tighter leading-[1.1]">
               Design <br />
               <span className="text-primary italic font-serif">
@@ -124,20 +151,60 @@ const SignUp = () => {
               <br />
               with us.
             </h1>
-            <p className="mt-6 text-gray-400 text-sm leading-relaxed max-w-[280px]">
-              Join 10k+ developers building high-performance web applications
-              with Shohag.dev.
+
+            <p className="mt-6 text-gray-500 dark:text-gray-400 text-sm leading-relaxed max-w-[280px]">
+              Join 10k+ developers building high-performance web applications.
             </p>
           </div>
-          <div className="mt-12 flex items-center gap-3 text-[10px] font-black text-gray-500 tracking-widest uppercase relative z-10">
+
+          <div className="mt-12 flex items-center gap-3 text-[10px] font-black text-gray-400 tracking-widest uppercase">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             SYSTEM STATUS: OPERATIONAL
           </div>
         </div>
 
-        {/* RIGHT: Form */}
-        <div className="lg:col-span-3 bg-white/[0.02] border border-white/5 backdrop-blur-md rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* ✅ RIGHT FORM (sign-in style card) */}
+        <div className="lg:col-span-3 bg-white border border-gray-200 shadow-2xl dark:bg-white/[0.02] dark:border-white/5 dark:backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-12">
+          <div className="text-center mb-10">
+            <div className="inline-block px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-black tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-6">
+              WELCOME
+            </div>
+            <h2 className="text-4xl font-bold tracking-tighter italic font-serif">
+              Sign Up
+            </h2>
+          </div>
+
+          {/* Error / Success banners */}
+          <AnimatePresence>
+            {apiError ? (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-6"
+              >
+                <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200 p-4">
+                  <FiAlertCircle className="mt-0.5" />
+                  <p className="text-sm">{apiError}</p>
+                </div>
+              </motion.div>
+            ) : null}
+
+            {successBanner ? (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-6"
+              >
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200 p-4 text-sm">
+                  OTP sent to your email. Redirecting…
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="grid md:grid-cols-2 gap-6">
               <Field
                 label="Full Name"
@@ -162,11 +229,10 @@ const SignUp = () => {
 
             <div className="grid md:grid-cols-2 gap-6">
               <Field label="Password" required error={errors.password?.message}>
-                {/* ✅ PasswordInput handles show/hide internally */}
                 <PasswordInput
                   {...register("password")}
                   hasError={!!errors.password}
-                  placeholder="••••••"
+                  placeholder="••••••••"
                 />
               </Field>
 
@@ -176,48 +242,56 @@ const SignUp = () => {
                 error={errors.confirmPassword?.message}
               >
                 <PasswordInput
-                  {...register("confirmPassword")}
+                  {...register("confirmPassword", {
+                    validate: (val) =>
+                      val === password || "Passwords do not match",
+                  })}
                   hasError={!!errors.confirmPassword}
-                  placeholder="••••••"
+                  placeholder="••••••••"
                 />
               </Field>
             </div>
 
-            <div className="pt-4 space-y-6">
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.01, y: -2 }}
-                whileTap={{ scale: 0.99 }}
-                disabled={isSubmitting}
-                className="w-full bg-primary text-black py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Create Account <FiArrowRight size={18} />
-                  </>
-                )}
-              </motion.button>
-
-              <div className="relative flex items-center gap-4 text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">
-                <div className="h-px flex-1 bg-white/5" />
-                Quick Connect
-                <div className="h-px flex-1 bg-white/5" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <SocialButton icon={<FiGithub />} label="GitHub" />
-                <SocialButton icon={<FiChrome />} label="Google" />
-              </div>
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              disabled={isSubmitting}
+              type="submit"
+              className="w-full bg-gray-900 text-white dark:bg-white dark:text-black py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em]
+                         flex items-center justify-center gap-3 mt-4 hover:bg-primary dark:hover:bg-primary transition-all duration-300 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Create Account <FiArrowRight />
+                </>
+              )}
+            </motion.button>
           </form>
 
-          <p className="mt-10 text-center text-gray-500 text-xs">
+          {/* Divider */}
+          <div className="relative my-10">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-white/5"></div>
+            </div>
+            <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]">
+              <span className="bg-white dark:bg-[#050505] px-4 text-gray-400">
+                Quick Connect
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <SocialButton icon={<FiChrome />} label="Google" />
+            <SocialButton icon={<FiGithub />} label="GitHub" />
+          </div>
+
+          <p className="mt-10 text-center text-gray-500 text-xs font-medium">
             Already have an account?{" "}
             <Link
               to="/auth/signin"
-              className="text-white font-bold hover:text-primary transition-colors"
+              className="text-gray-900 dark:text-white font-bold hover:text-primary transition-colors underline-offset-4 underline decoration-current/10"
             >
               Sign In
             </Link>

@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 import slugify from "slugify";
+import {
+  PROJECT_CATEGORIES,
+  PROJECT_STATUSES,
+} from "../../../../admin/constants/projectConstants.js";
 
 const projectSchema = new mongoose.Schema(
   {
@@ -17,13 +21,13 @@ const projectSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Full Stack", "Frontend", "Backend"],
+      enum: PROJECT_CATEGORIES,
     },
 
     status: {
       type: String,
       required: true,
-      enum: ["published", "pending", "draft"],
+      enum: PROJECT_STATUSES,
       default: "draft",
     },
 

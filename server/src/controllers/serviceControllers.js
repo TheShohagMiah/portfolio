@@ -8,25 +8,71 @@ export const addService = asyncHandler(async (req, res) => {
   if (!newService) {
     throw new ApiError(102, "Not worked");
   }
-  res
-    .status(201)
-    .json({
-      success: true,
-      message: "Service was added successfully.",
-      data: newService,
-    });
+  res.status(201).json({
+    success: true,
+    message: "Service was added successfully.",
+    data: newService,
+  });
 });
 
 // @desc    Get All Services
 export const getServices = asyncHandler(async (req, res) => {
-  const services = await Service.find({}).sort({ order: 1 });
+  const {
+    search,
 
-  if (services.length === 0) {
-    throw new ApiError(404, "No services found");
+    tags,
+    sortBy = "createdAt",
+    order = "desc",
+
+    page = 1,
+    limit = 5,
+  } = req.query;
+
+  // ========================
+  // 🔴 FILTER
+  // ========================
+  const filter = {};
+
+  if (search) {
+    filter.title = { $regex: search, $options: "i" };
   }
 
-  res.json({
+  if (tags) {
+    const tagsArray = tags.split(",").map((t) => t.trim());
+    filter.tags = { $in: tagsArray };
+  }
+
+  // ========================
+  // 🟡 SORT
+  // ========================
+  const validSortFields = ["createdAt", "updatedAt", "title", "order"];
+  const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortOrder = order === "asc" ? 1 : -1;
+  const sortObj = { [sortField]: sortOrder };
+
+  // ========================
+  // 🟢 PAGINATION
+  // ========================
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 5;
+  const skip = (pageNum - 1) * limitNum;
+
+  // ========================
+  // ✅ DB Query
+  // ========================
+  const total = await Service.countDocuments(filter);
+  const services = await Service.find(filter)
+    .sort(sortObj)
+    .skip(skip)
+    .limit(limitNum)
+    .select("-__v");
+
+  res.status(200).json({
     success: true,
+    total,
+    count: services.length,
+    page: pageNum,
+    totalPages: Math.ceil(total / limitNum),
     data: services,
   });
 });

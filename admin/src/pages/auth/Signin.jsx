@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +9,7 @@ import {
   FiChrome,
   FiEye,
   FiEyeOff,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import SocialButton from "../../components/shared/SocialButton";
@@ -18,10 +19,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../../validators/auth/authValidations";
 
-// Theme-aware input styling
+// Theme-aware input styling (unchanged)
 export const inputCls = (hasError) =>
   `w-full px-4 py-3 rounded-xl text-sm transition-all duration-200
-   bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400
+   bg-gray-100 border border-gray-200 text-gray-900 placeholder:text-gray-400
    dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-gray-500
    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
    ${hasError ? "border-red-500 ring-red-500/10" : "hover:border-primary/30"}`;
@@ -30,22 +31,36 @@ const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, user } = useAuth();
+
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState("");
 
-  // Redirect to dashboard or the page they tried to access
   const from = location.state?.from?.pathname || "/admin/dashboard";
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(loginSchema), mode: "onBlur" });
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  });
+
+  // If already logged in, redirect away from signin
+  useEffect(() => {
+    if (user) navigate(from, { replace: true });
+  }, [user, from, navigate]);
 
   const onSubmit = async (data) => {
+    setFormError("");
     const result = await login(data);
-    if (result.success) {
+
+    if (result?.success) {
       navigate(from, { replace: true });
+    } else {
+      // Ensure we show a visible error even if login() only returns success=false
+      setFormError(result?.message || "Invalid email or password.");
     }
   };
 
@@ -84,15 +99,20 @@ const SignIn = () => {
             </h2>
           </div>
 
+          {/* Top-level error */}
+          {formError && (
+            <div className="mb-5 flex items-start gap-2 rounded-2xl p-4 border border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+              <FiAlertCircle className="mt-0.5" />
+              <p className="text-sm">{formError}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Field label="Email" required error={errors.email?.message}>
               <div className="relative">
                 <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
-                  })}
+                  {...register("email")}
                   placeholder="name@company.com"
                   className={`${inputCls(!!errors.email)} pl-11`}
                 />
@@ -103,17 +123,16 @@ const SignIn = () => {
               <div className="relative">
                 <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  {...register("password", {
-                    required: "Password is required",
-                  })}
+                  {...register("password")}
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className={`${inputCls(!!errors.password)} pl-11`}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </button>
@@ -143,7 +162,7 @@ const SignIn = () => {
               <div className="w-full border-t border-gray-200 dark:border-white/5"></div>
             </div>
             <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]">
-              <span className="bg-white dark:bg-[#0a0a0a] px-4 text-gray-400">
+              <span className="bg-white dark:bg-[#050505] px-4 text-gray-400">
                 Quick Connect
               </span>
             </div>
