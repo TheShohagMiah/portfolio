@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const aboutSchema = new mongoose.Schema(
   {
-    // Executive Summary Section
+    // ── Executive Summary ──────────────────────────────────────────
     title: {
       type: String,
       required: [true, "Please add a main title"],
@@ -14,47 +14,40 @@ const aboutSchema = new mongoose.Schema(
       required: [true, "Please add your biography"],
     },
 
-    // Quick Stats Section (Matches the Right-Side Bento Card)
-    experienceYears: {
-      type: String,
-      default: "3.5+",
-    },
-    location: {
-      type: String,
-      default: "Cyprus",
-    },
+    // ── Quick Stats ────────────────────────────────────────────────
+    experienceYears: { type: String, default: "3.5+" },
+    location: { type: String, default: "Cyprus" },
     freelanceStatus: {
       type: String,
       enum: ["available", "busy", "unavailable"],
       default: "available",
     },
 
-    // Academic Timeline Section (Matches useFieldArray keys)
+    // ── Academic Timeline ──────────────────────────────────────────
     education: [
       {
         courseTitle: {
           type: String,
           required: [true, "Course title is required"],
-        }, // e.g., "Bachelor of Science"
-        subject: {
-          type: String,
-          required: [true, "Subject is required"],
-        }, // e.g., "Computer Science"
+        },
+        subject: { type: String, required: [true, "Subject is required"] },
         institution: {
           type: String,
           required: [true, "Institution is required"],
         },
         duration: {
-          from: { type: String, required: true }, // Matches register(`education.${index}.duration.from`)
-          to: { type: String, required: true }, // Matches register(`education.${index}.duration.to`)
+          from: { type: String, required: true }, // ✅ matches Zod min(1)
+          to: { type: String, required: true }, // Fix 2 ✅ matches Zod min(1)
         },
-        description: {
+        description: { type: String, default: "" },
+        status: {
           type: String,
-        }, // Optional extra detail
+          enum: ["ongoing", "completed"],
+        },
       },
     ],
 
-    // Media Assets (For future uploads in the panel)
+    // ── Media Assets ──────────────────────────────────────────────
     profileImage: {
       url: { type: String, default: "" },
       public_id: { type: String, default: "" },
@@ -64,12 +57,8 @@ const aboutSchema = new mongoose.Schema(
       public_id: { type: String, default: "" },
     },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-// Prevent model overwrite on HMR (Hot Module Replacement)
 const About = mongoose.models.About || mongoose.model("About", aboutSchema);
-
 export default About;

@@ -1,51 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
 import ProjectCard from "../common/ProjectCard";
-
-/* ── data ── */
-const projects = [
-  {
-    id: 1,
-    title: "E-Commerce Platform",
-    description:
-      "A full-stack e-commerce application with user authentication, product management, and Stripe integration.",
-    image: "/projects/ecommerce.jpg",
-    category: "Full Stack",
-    technologies: ["React", "Node.js", "MongoDB", "Stripe"],
-    github: "#",
-    live: "#",
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "Task Management App",
-    description:
-      "Collaborative tool with real-time updates and drag-and-drop team collaboration features.",
-    image: "/projects/taskmanager.jpg",
-    category: "Full Stack",
-    technologies: ["Next.js", "Prisma", "Socket.io", "Tailwind"],
-    github: "#",
-    live: "#",
-  },
-  {
-    id: 3,
-    title: "Weather Dashboard",
-    description:
-      "Real-time weather application with location forecasts and interactive maps using OpenWeather API.",
-    image: "/projects/weather.jpg",
-    category: "Frontend",
-    technologies: ["React", "TypeScript", "Chart.js"],
-    github: "#",
-    live: "#",
-  },
-];
+import axiosInstance from "../../lib/axios";
 
 const CATEGORIES = ["All", "Full Stack", "Frontend", "Backend"];
 
 /* ══ Main Component ══ */
 const Projects = () => {
   const [filter, setFilter] = useState("All");
+  const [projects, setProjects] = useState([]);
+
+  const getAllProjects = async () => {
+    try {
+      const res = await axiosInstance.get("/api/projects");
+      if (res.data.success) {
+        setProjects(res.data.data);
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    getAllProjects();
+  }, []);
 
   const filtered =
     filter === "All" ? projects : projects.filter((p) => p.category === filter);
@@ -116,7 +93,7 @@ const Projects = () => {
               transition={{ delay: 0.2 }}
               className="flex flex-wrap gap-1.5 bg-secondary/40 backdrop-blur-md p-1.5 rounded-2xl border border-border w-fit"
             >
-              {CATEGORIES.map((cat) => (
+              {CATEGORIES?.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setFilter(cat)}
@@ -158,7 +135,7 @@ const Projects = () => {
           >
             <AnimatePresence mode="popLayout">
               {filtered.map((project, i) => (
-                <ProjectCard key={project.id} project={project} index={i} />
+                <ProjectCard key={project._id} project={project} index={i} />
               ))}
             </AnimatePresence>
           </motion.div>

@@ -23,10 +23,6 @@ export const addOrUpdateAbout = asyncHandler(async (req, res) => {
 export const getAbout = asyncHandler(async (req, res) => {
   const about = await About.findOne();
 
-  if (!about) {
-    throw new ApiError(404, "About data no found.");
-  }
-
   res.json({
     success: true,
     data: about,

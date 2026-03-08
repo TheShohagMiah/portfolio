@@ -125,7 +125,7 @@ const HeroManagement = () => {
 
               <Field label="Introduction" error={errors.description?.message}>
                 <textarea
-                  rows={2}
+                  rows={4}
                   {...register("description", {
                     required: "Required",
                     maxLength: 160,

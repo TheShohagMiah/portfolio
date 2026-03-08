@@ -1,8 +1,9 @@
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiArrowUpRight, FiDownload, FiCode } from "react-icons/fi";
+import axiosInstance from "../../lib/axios";
 
-/* ── stable random positions — generated once, not on every render ── */
+/* ── Stable Star Positions ────────────────────────────────────────── */
 const STARS = Array.from({ length: 14 }, (_, i) => ({
   id: i,
   left: `${(i * 73 + 11) % 97}%`,
@@ -11,10 +12,9 @@ const STARS = Array.from({ length: 14 }, (_, i) => ({
   delay: (i * 0.41) % 5,
   size: i % 3 === 0 ? "w-2 h-2" : "w-1.5 h-1.5",
 }));
-
 const TECH = ["React", "Next.js", "Node.js", "TypeScript"];
 
-/* ── variants ── */
+/* ── Variants ─────────────────────────────────────────────────────── */
 const container = {
   hidden: { opacity: 0 },
   visible: {
@@ -34,6 +34,45 @@ const item = {
 const Hero = () => {
   const containerRef = useRef(null);
 
+  const [heroData, setHeroData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const getHero = async () => {
+    try {
+      const res = await axiosInstance.get("/api/hero");
+      if (res.data?.success) {
+        setHeroData(res.data.data);
+      }
+    } catch (error) {
+      console.log(error.response?.data?.message || "Failed to load hero data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getHero();
+  }, []);
+
+  const words = heroData?.title.split(" ");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <motion.div
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-[10px] font-bold uppercase tracking-[0.35em] text-muted-foreground"
+        >
+          Loading...
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ✅ heroData না থাকলে কিছু দেখাবে না
+  if (!heroData) return null;
+
   return (
     <div
       ref={containerRef}
@@ -42,7 +81,6 @@ const Hero = () => {
     >
       {/* ══ Background Layer ══ */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Fine grid */}
         <div
           className="absolute inset-0"
           style={{
@@ -53,8 +91,6 @@ const Hero = () => {
             `,
           }}
         />
-
-        {/* Radial vignette over grid */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,transparent_30%,var(--background)_100%)]" />
 
         {/* Center glow */}
@@ -65,7 +101,7 @@ const Hero = () => {
           style={{ background: "var(--brand)" }}
         />
 
-        {/* Secondary off-center glow */}
+        {/* Secondary glow */}
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.04, 0.09, 0.04] }}
           transition={{
@@ -78,7 +114,7 @@ const Hero = () => {
           style={{ background: "var(--brand)" }}
         />
 
-        {/* Twinkling stars */}
+        {/* Stars */}
         {STARS.map((s) => (
           <motion.div
             key={s.id}
@@ -110,20 +146,19 @@ const Hero = () => {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
             <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-              Available for new projects
+              {heroData.freelanceStatus} for new projects
             </span>
           </div>
         </motion.div>
 
-        {/* ── Main Title ── */}
+        {/* ── Title ── */}
         <motion.div variants={item} className="space-y-5">
           <h1 className="text-6xl md:text-[90px] font-black tracking-tight text-foreground leading-[1.0]">
-            Shohag{" "}
+            {words[0]}{" "}
             <span className="relative inline-block">
               <span className="text-muted-foreground italic font-serif font-light">
-                Miah
+                {words[1]}
               </span>
-              {/* animated underline */}
               <motion.svg
                 viewBox="0 0 240 10"
                 fill="none"
@@ -145,12 +180,12 @@ const Hero = () => {
             </span>
           </h1>
 
-          {/* Role row */}
+          {/* Role */}
           <div className="flex items-center justify-center gap-4">
             <motion.span
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ delay: 1.1, duration: 0.7, ease: "easeOut" }}
+              transition={{ delay: 1.1, duration: 0.7 }}
               className="block h-px w-8 origin-right"
               style={{ background: "var(--brand)" }}
             />
@@ -158,12 +193,12 @@ const Hero = () => {
               className="text-base md:text-xl font-semibold tracking-[0.25em] uppercase"
               style={{ color: "var(--brand)" }}
             >
-              Full Stack Developer
+              {heroData.subTitle}
             </h2>
             <motion.span
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ delay: 1.1, duration: 0.7, ease: "easeOut" }}
+              transition={{ delay: 1.1, duration: 0.7 }}
               className="block h-px w-8 origin-left"
               style={{ background: "var(--brand)" }}
             />
@@ -175,26 +210,17 @@ const Hero = () => {
           variants={item}
           className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed"
         >
-          Building the future of the web with{" "}
-          <span className="text-foreground font-semibold">3.5 years</span> of
-          experience. Currently architecting scalable solutions at{" "}
-          <span
-            className="font-semibold underline underline-offset-4 decoration-[var(--brand)]/40"
-            style={{ color: "var(--brand-soft, var(--brand))" }}
-          >
-            Philips University
-          </span>
-          .
+          {heroData.description}
         </motion.p>
 
-        {/* ── Action Buttons ── */}
+        {/* ── Buttons ── */}
         <motion.div
           variants={item}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
         >
-          {/* Primary */}
+          {/* Primary CTA */}
           <motion.a
-            href="#projects"
+            href={heroData.ctaLink}
             whileHover="hover"
             whileTap={{ scale: 0.97 }}
             className="group relative w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold overflow-hidden shadow-xl transition-shadow"
@@ -208,14 +234,13 @@ const Hero = () => {
             }
             onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "")}
           >
-            {/* shimmer */}
             <motion.div
               variants={{ hover: { x: "200%" }, initial: { x: "-200%" } }}
               initial="initial"
               transition={{ duration: 0.55, ease: "easeInOut" }}
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
             />
-            <span className="relative z-10 text-sm">View My Work</span>
+            <span className="relative z-10 text-sm">{heroData.ctaText}</span>
             <motion.span
               variants={{ hover: { x: 3, y: -3 } }}
               className="relative z-10"
@@ -224,9 +249,9 @@ const Hero = () => {
             </motion.span>
           </motion.a>
 
-          {/* Secondary */}
+          {/* Download CV */}
           <motion.a
-            href="/resume.pdf"
+            href={heroData.downloadLink}
             target="_blank"
             whileHover="hover"
             whileTap={{ scale: 0.97 }}
@@ -238,7 +263,7 @@ const Hero = () => {
             >
               <FiDownload size={17} />
             </motion.span>
-            <span>Download CV</span>
+            <span>{heroData.downloadText}</span>
           </motion.a>
         </motion.div>
 
@@ -264,7 +289,8 @@ const Hero = () => {
               <FiCode size={18} />
             </motion.div>
 
-            {TECH.map((tech, i) => (
+            {/* ✅ সমস্যা ৪ ঠিক: DB থেকে tech stack আসছে */}
+            {TECH?.map((tech, i) => (
               <motion.span
                 key={tech}
                 initial={{ opacity: 0, y: 8 }}

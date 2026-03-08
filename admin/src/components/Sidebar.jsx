@@ -101,7 +101,7 @@ const Sidebar = ({ onClose }) => {
       <div className="p-6">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center bg-brand shadow-brand"
+            className="w-10 h-10 rounded-sm flex items-center justify-center bg-brand shadow-brand"
             style={{ boxShadow: "0 0 20px var(--brand-glow)" }}
           >
             <RiLightbulbFlashLine size={22} className="text-brand-fg" />
@@ -143,7 +143,7 @@ const Sidebar = ({ onClose }) => {
                   <div>
                     <button
                       onClick={() => toggleSubmenu(index)}
-                      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-xl transition-all duration-300 group ${
+                      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-sm transition-all duration-300 group ${
                         isSubmenuOpen || isParentActive
                           ? "bg-secondary text-foreground"
                           : "hover:bg-secondary/50 hover:text-foreground"
@@ -190,9 +190,9 @@ const Sidebar = ({ onClose }) => {
                               to={subItem.path}
                               onClick={handleLinkClick}
                               className={({ isActive }) =>
-                                `relative block px-4 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 ${
+                                `relative block px-4 py-2 rounded-sm text-[12px] font-medium transition-all duration-200 ${
                                   isActive
-                                    ? "bg-brand-muted"
+                                    ? "bg-brand-muted/60"
                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
                                 }`
                               }
@@ -215,7 +215,7 @@ const Sidebar = ({ onClose }) => {
                     to={item.path}
                     onClick={handleLinkClick}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                      `flex items-center gap-3 px-4 py-2.5 rounded-sm transition-all duration-300 ${
                         isActive
                           ? "bg-brand text-brand-fg shadow-brand"
                           : "hover:bg-secondary/50 hover:text-foreground"
@@ -246,7 +246,7 @@ const Sidebar = ({ onClose }) => {
       <div className="p-4 bg-gradient-to-t from-background to-transparent mt-auto">
         <button
           onClick={handleLogOut}
-          className="group w-full flex items-center justify-center gap-3 px-3 py-3 rounded-xl border border-border text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-300"
+          className="group w-full flex items-center justify-center gap-3 px-3 py-3 rounded-sm border border-border text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-300"
         >
           <RiLogoutBoxRLine
             size={18}

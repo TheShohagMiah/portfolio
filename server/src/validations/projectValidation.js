@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const projectValidationSchema = z.object({
   title: z.string().min(3, "Title too short").max(100),
-  description: z.string().min(10, "Description too short").max(500),
+  description: z.string().min(10, "Description too short").max(5000),
 
   image: z
     .object({

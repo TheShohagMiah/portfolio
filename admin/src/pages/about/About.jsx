@@ -10,12 +10,16 @@ import {
   FiActivity,
   FiSave,
   FiCpu,
+  FiArrowDownCircle,
 } from "react-icons/fi";
 import { LuLoader } from "react-icons/lu";
 import { toast } from "react-hot-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { aboutValidationSchema } from "../../validators/about/aboutValidation";
 import DeleteModal from "../../components/shared/DeleteModal";
+
+// Fix 3 ✅
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const inputCls = (hasError) =>
   `w-full bg-secondary border rounded-2xl py-3 px-4 text-sm text-foreground 
@@ -45,27 +49,14 @@ const BentoCard = ({ children, title, icon: Icon, className = "" }) => (
 
 const UpdateBioForm = ({ initialData }) => {
   const [isLoading, setIsLoading] = useState(true);
+
   const [deleteConfig, setDeleteConfig] = useState({
     isOpen: false,
     id: null,
     index: null,
     title: "",
+    isDeleting: false,
   });
-
-  const initiateDelete = (field, index) => {
-    // If it's a brand new field not in DB, just remove it instantly
-    if (!field._id) {
-      remove(index);
-      return;
-    }
-    // Otherwise, open the modal
-    setDeleteConfig({
-      isOpen: true,
-      id: toString(field._id),
-      index: index,
-      title: field.courseTitle || "this education record",
-    });
-  };
 
   const {
     register,
@@ -75,9 +66,7 @@ const UpdateBioForm = ({ initialData }) => {
     setError,
     formState: { isSubmitting, isDirty, errors },
   } = useForm({
-    defaultValues: initialData || {
-      education: [],
-    },
+    defaultValues: initialData || { education: [] },
     resolver: zodResolver(aboutValidationSchema),
   });
 
@@ -86,17 +75,32 @@ const UpdateBioForm = ({ initialData }) => {
     name: "education",
   });
 
+  const initiateDelete = (field, index) => {
+    if (!field._id) {
+      remove(index);
+      return;
+    }
+    setDeleteConfig({
+      isOpen: true,
+      id: String(field._id),
+      index,
+      title: field.courseTitle || "this education record",
+      isDeleting: false,
+    });
+  };
+
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
         setIsLoading(true);
-        const res = await axios.get("http://localhost:5000/api/about");
+        const res = await axios.get(`${API_BASE}/api/about`);
         const heroPayload = res.data?.data;
-        if (heroPayload) {
-          reset(heroPayload);
-        }
+        if (heroPayload) reset(heroPayload);
       } catch (err) {
-        toast.error("Failed to connect to the System Core");
+        toast.error(
+          err?.response?.data?.message ||
+            "Failed to connect to the System Core",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -105,43 +109,56 @@ const UpdateBioForm = ({ initialData }) => {
   }, [reset]);
 
   const handleDelete = async (eduId, index) => {
-    // If it's a new field not yet saved in DB, just remove from UI
     if (!eduId) {
       remove(index);
+      setDeleteConfig({
+        isOpen: false,
+        id: null,
+        index: null,
+        title: "",
+        isDeleting: false,
+      });
       return;
     }
 
+    setDeleteConfig((prev) => ({ ...prev, isDeleting: true }));
+
     try {
       const res = await axios.delete(
-        `http://localhost:5000/api/about/education/${eduId}`,
+        `${API_BASE}/api/about/education/${eduId}`,
         { withCredentials: true },
       );
-
       if (res.data.success) {
         toast.success(res.data.message || "Education record purged.");
-        remove(index); // Sync UI after successful DB deletion
+        remove(index);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
+    } finally {
+      setDeleteConfig({
+        isOpen: false,
+        id: null,
+        index: null,
+        title: "",
+        isDeleting: false,
+      });
     }
   };
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.patch(
-        "http://localhost:5000/api/about/update",
-        data,
-        { withCredentials: true },
-      );
-
+      const response = await axios.patch(`${API_BASE}/api/about/update`, data, {
+        withCredentials: true,
+      });
       if (response.data.success) {
         toast.success(response.data.message || "Updated successfully!");
         reset(response.data.data);
       }
     } catch (error) {
       const resData = error.response?.data;
-      if (resData?.errors) {
+      if (Array.isArray(resData?.errors)) {
         resData.errors.forEach((err) => {
+          if (!err?.path || !Array.isArray(err.path)) return;
           setError(err.path.join("."), {
             type: "server",
             message: err.message,
@@ -282,17 +299,8 @@ const UpdateBioForm = ({ initialData }) => {
                       <FiTrash2 size={16} />
                     </button>
 
-                    <DeleteModal
-                      isOpen={deleteConfig.isOpen}
-                      title={deleteConfig.title}
-                      onClose={() =>
-                        setDeleteConfig({ ...deleteConfig, isOpen: false })
-                      }
-                      onConfirm={handleDelete}
-                    />
-
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2 space-y-1">
+                      <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           Course Title
                         </label>
@@ -307,6 +315,25 @@ const UpdateBioForm = ({ initialData }) => {
                           error={errors.education?.[index]?.courseTitle}
                         />
                       </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
+                          Status
+                        </label>
+                        <div className="relative">
+                          {/* Fix 2 ✅ — defaultValue syncs loaded DB value */}
+                          <select
+                            {...register(`education.${index}.status`)}
+                            className={`${inputCls(!!errors.education?.[index]?.status)} appearance-none cursor-pointer pr-10`}
+                          >
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                          <FiArrowDownCircle className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        </div>
+                        <FieldError error={errors.education?.[index]?.status} />
+                      </div>
+
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           Subject
@@ -322,6 +349,7 @@ const UpdateBioForm = ({ initialData }) => {
                           error={errors.education?.[index]?.subject}
                         />
                       </div>
+
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           Institution
@@ -337,6 +365,7 @@ const UpdateBioForm = ({ initialData }) => {
                           error={errors.education?.[index]?.institution}
                         />
                       </div>
+
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           From
@@ -352,21 +381,24 @@ const UpdateBioForm = ({ initialData }) => {
                           error={errors.education?.[index]?.duration?.from}
                         />
                       </div>
+
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           To
                         </label>
+                        {/* Fix 4 ✅ — clear placeholder */}
                         <input
                           {...register(`education.${index}.duration.to`)}
                           className={inputCls(
                             !!errors.education?.[index]?.duration?.to,
                           )}
-                          placeholder="Present"
+                          placeholder='e.g. 2024 or "Present"'
                         />
                         <FieldError
                           error={errors.education?.[index]?.duration?.to}
                         />
                       </div>
+
                       <div className="col-span-2 space-y-1">
                         <label className="text-[9px] font-bold uppercase text-muted-foreground ml-2">
                           Description (optional)
@@ -383,6 +415,26 @@ const UpdateBioForm = ({ initialData }) => {
                 ))}
               </AnimatePresence>
 
+              {/* Fix 5 ✅ — isDeleting passed to modal */}
+              <DeleteModal
+                isOpen={deleteConfig.isOpen}
+                title={deleteConfig.title}
+                isDeleting={deleteConfig.isDeleting}
+                onClose={() =>
+                  setDeleteConfig({
+                    isOpen: false,
+                    id: null,
+                    index: null,
+                    title: "",
+                    isDeleting: false,
+                  })
+                }
+                onConfirm={() =>
+                  handleDelete(deleteConfig.id, deleteConfig.index)
+                }
+              />
+
+              {/* Fix 1 ✅ — status defaults to "ongoing" */}
               <button
                 type="button"
                 onClick={() =>
@@ -391,6 +443,7 @@ const UpdateBioForm = ({ initialData }) => {
                     subject: "",
                     institution: "",
                     description: "",
+                    status: "ongoing",
                     duration: { from: "", to: "" },
                   })
                 }

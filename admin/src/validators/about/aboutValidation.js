@@ -6,7 +6,7 @@ export const aboutValidationSchema = z.object({
   bio: z.string().min(20, "Bio should be at least 20 characters").trim(),
 
   // ── Quick Stats ────────────────────────────────────────────────
-  experienceYears: z.string().default(""), // free-text e.g. "3.5+ Years"
+  experienceYears: z.string().default(""),
   location: z.string().default(""),
   freelanceStatus: z.enum(["available", "busy", "unavailable"]),
 
@@ -18,24 +18,39 @@ export const aboutValidationSchema = z.object({
         subject: z.string().min(1, "Subject is required"),
         institution: z.string().min(1, "Institution is required"),
         description: z.string().optional().default(""),
+
         duration: z.object({
           from: z.string().min(1, "Start year is required"),
+          // ✅ Mongoose requires it — keep min(1) so empty string is rejected
           to: z.string().min(1, "End year is required"),
         }),
+
+        status: z.enum(["ongoing", "completed"]),
       }),
     )
     .default([]),
 
+  // ── Media Assets ──────────────────────────────────────────────
   profileImage: z
     .object({
-      url: z.string().optional(),
-      public_id: z.string().optional(),
+      // ✅ Matches Mongoose defaults of ""
+      url: z.string().default(""),
+      public_id: z.string().default(""),
     })
     .optional(),
 
-  resumeUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.string().length(0)),
+  // ✅ Fixed: matches Mongoose field name "resume" (not "resumeUrl")
+  resume: z
+    .object({
+      url: z
+        .string()
+        .trim()
+        .refine(
+          (val) => val === "" || z.string().url().safeParse(val).success,
+          { message: "Must be a valid URL (e.g. https://example.com)" },
+        )
+        .default(""),
+      public_id: z.string().default(""),
+    })
+    .optional(),
 });

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMail,
@@ -9,6 +11,8 @@ import {
   FiCheck,
   FiAlertCircle,
 } from "react-icons/fi";
+import axiosInstance from "../../lib/axios";
+import { contactSchema } from "../../validators/contactValidation";
 
 /* ── contact items ────────────────────────────────────────────── */
 const contactItems = [
@@ -32,17 +36,17 @@ const contactItems = [
   },
 ];
 
-/* ── shared input classes ─────────────────────────────────────── */
-const inputCls = (focused, hasError) =>
-  `w-full bg-background border rounded-2xl px-5 py-3.5 text-sm text-foreground
-   placeholder:text-muted-foreground/50 outline-none transition-all duration-200
-   ${
-     hasError
-       ? "border-red-500/60 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-       : focused
-         ? "border-[var(--brand)] shadow-[0_0_0_3px_var(--brand-muted)]"
-         : "border-border hover:border-[var(--brand-border)]"
-   }`;
+/* ── input classes ────────────────────────────────────────────── */
+const inputCls = (isFocused, hasError) =>
+  [
+    "w-full bg-background border rounded-2xl px-5 py-3.5 text-sm text-foreground",
+    "placeholder:text-muted-foreground/50 outline-none transition-all duration-200",
+    hasError
+      ? "border-red-500/60 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+      : isFocused
+        ? "border-[var(--brand)] shadow-[0_0_0_3px_var(--brand-muted)]"
+        : "border-border hover:border-[var(--brand-border)]",
+  ].join(" ");
 
 /* ── Field wrapper ────────────────────────────────────────────── */
 const Field = ({ label, error, children }) => (
@@ -51,13 +55,14 @@ const Field = ({ label, error, children }) => (
       {label}
     </label>
     {children}
-    {/* ✅ Fix 3: field-level error shown under each input */}
     <AnimatePresence>
       {error && (
         <motion.p
+          key="error"
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
           className="flex items-center gap-1.5 text-red-500 text-[11px] font-medium ml-1"
         >
           <FiAlertCircle className="size-3 shrink-0" />
@@ -68,11 +73,12 @@ const Field = ({ label, error, children }) => (
   </div>
 );
 
-/* ─��� variants ─────────────────────────────────────────────────── */
+/* ── animation variants ───────────────────────────────────────── */
 const stagger = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
 };
+
 const slideUp = {
   hidden: { opacity: 0, y: 16 },
   visible: {
@@ -82,75 +88,64 @@ const slideUp = {
   },
 };
 
-/* ══ Component ══════════════════════════════════════════════════ */
+/* ══ Contact Component ══════════════════════════════════════════ */
 const Contact = () => {
-  // ── State ────────────────────────────────────────────────────
-  const [focused, setFocused] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [globalError, setGlobalError] = useState("");
+  const [focusedField, setFocusedField] = useState(null);
 
-  // ✅ Fix 1: controlled form state
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
+    },
   });
 
-  // ✅ Fix 3: field-level + global errors
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [globalError, setGlobalError] = useState("");
+  /* ── focus helpers ────────────────────────────────────────────── */
+  const focusProps = (name) => ({
+    onFocus: () => setFocusedField(name),
+    onBlur: () => setFocusedField(null),
+  });
 
-  // ── Handlers ───────────────��─────────────────────────────────
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear error on typing
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  // ✅ Fix 2: real API call instead of fake setTimeout
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  /* ── submit ───────────────────────────────────────────────────── */
+  const onSubmit = async (data) => {
     setStatus("loading");
-    setFieldErrors({});
     setGlobalError("");
 
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await axiosInstance.post("/api/contact", data);
 
-      const data = await res.json();
-
-      if (res.ok) {
-        // ── Success ─────────────────────────────────────────────
+      if (res.data.success) {
         setStatus("success");
-        setForm({ name: "", email: "", phone: "", subject: "", message: "" });
-        // Reset back to idle after 4s
+        reset();
         setTimeout(() => setStatus("idle"), 4000);
-      } else if (res.status === 422 && data.errors) {
-        // ── Zod validation errors ────────────────────────────────
-        const mapped = {};
-        data.errors.forEach(({ field, message }) => {
-          mapped[field] = message;
+      }
+    } catch (err) {
+      const resData = err.response?.data;
+      const httpStatus = err.response?.status;
+
+      if (httpStatus === 422 && resData?.errors?.length) {
+        // Map server Zod errors back into RHF fields
+        resData.errors.forEach(({ field, message }) => {
+          setError(field, { type: "server", message });
         });
-        setFieldErrors(mapped);
         setStatus("idle");
       } else {
-        // ── Server error ─────────────────────────────────────────
         setGlobalError(
-          data.message || "Something went wrong. Please try again.",
+          resData?.message || "Something went wrong. Please try again.",
         );
         setStatus("error");
       }
-    } catch {
-      setGlobalError("Network error. Please check your connection.");
-      setStatus("error");
     }
   };
 
@@ -209,7 +204,7 @@ const Contact = () => {
           </motion.div>
 
           <div className="grid lg:grid-cols-12 gap-10 items-start">
-            {/* ══ LEFT — Contact Form ═════════════════════════ */}
+            {/* ══ LEFT — Form ═════════════════════════════════ */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -237,45 +232,39 @@ const Contact = () => {
 
               <form
                 className="relative space-y-6"
-                onSubmit={handleSubmit}
+                onSubmit={handleSubmit(onSubmit)}
                 noValidate
               >
-                {/* Name + Email */}
+                {/* ── Row 1: Name + Email ── */}
                 <div className="grid md:grid-cols-2 gap-5">
-                  <Field label="Your Name" error={fieldErrors.name}>
+                  <Field label="Your Name" error={errors.name?.message}>
                     <input
                       type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
                       placeholder="John Doe"
                       className={inputCls(
-                        focused === "name",
-                        !!fieldErrors.name,
+                        focusedField === "name",
+                        !!errors.name,
                       )}
-                      onFocus={() => setFocused("name")}
-                      onBlur={() => setFocused(null)}
+                      {...register("name")}
+                      {...focusProps("name")}
                     />
                   </Field>
 
-                  <Field label="Email Address" error={fieldErrors.email}>
+                  <Field label="Email Address" error={errors.email?.message}>
                     <input
                       type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
                       placeholder="john@example.com"
                       className={inputCls(
-                        focused === "email",
-                        !!fieldErrors.email,
+                        focusedField === "email",
+                        !!errors.email,
                       )}
-                      onFocus={() => setFocused("email")}
-                      onBlur={() => setFocused(null)}
+                      {...register("email")}
+                      {...focusProps("email")}
                     />
                   </Field>
                 </div>
 
-                {/* ✅ Fix 4: Phone + Subject row */}
+                {/* ── Row 2: Phone + Subject ── */}
                 <div className="grid md:grid-cols-2 gap-5">
                   <Field
                     label={
@@ -286,61 +275,50 @@ const Contact = () => {
                         </span>
                       </>
                     }
-                    error={fieldErrors.phone}
+                    error={errors.phone?.message}
                   >
                     <input
                       type="tel"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="+1 234 567 8900"
+                      placeholder="+357 94 566 173"
                       className={inputCls(
-                        focused === "phone",
-                        !!fieldErrors.phone,
+                        focusedField === "phone",
+                        !!errors.phone,
                       )}
-                      onFocus={() => setFocused("phone")}
-                      onBlur={() => setFocused(null)}
+                      {...register("phone")}
+                      {...focusProps("phone")}
                     />
                   </Field>
 
-                  <Field label="Subject" error={fieldErrors.subject}>
+                  <Field label="Subject" error={errors.subject?.message}>
                     <input
                       type="text"
-                      name="subject"
-                      value={form.subject}
-                      onChange={handleChange}
                       placeholder="Project Inquiry"
                       className={inputCls(
-                        focused === "subject",
-                        !!fieldErrors.subject,
+                        focusedField === "subject",
+                        !!errors.subject,
                       )}
-                      onFocus={() => setFocused("subject")}
-                      onBlur={() => setFocused(null)}
+                      {...register("subject")}
+                      {...focusProps("subject")}
                     />
                   </Field>
                 </div>
 
-                {/* Message */}
-                <Field label="Message" error={fieldErrors.message}>
+                {/* ── Message ── */}
+                <Field label="Message" error={errors.message?.message}>
                   <textarea
                     rows={5}
-                    name="message"
-                    value={form.message}
-                    onChange={handleChange}
                     placeholder="Tell me about your project..."
-                    className={`${inputCls(
-                      focused === "message",
-                      !!fieldErrors.message,
-                    )} resize-none`}
-                    onFocus={() => setFocused("message")}
-                    onBlur={() => setFocused(null)}
+                    className={`${inputCls(focusedField === "message", !!errors.message)} resize-none`}
+                    {...register("message")}
+                    {...focusProps("message")}
                   />
                 </Field>
 
-                {/* Global Error Banner */}
+                {/* ── Global Error Banner ── */}
                 <AnimatePresence>
                   {status === "error" && globalError && (
                     <motion.div
+                      key="global-error"
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
@@ -352,7 +330,7 @@ const Contact = () => {
                   )}
                 </AnimatePresence>
 
-                {/* Submit Button */}
+                {/* ── Submit Button ── */}
                 <motion.button
                   type="submit"
                   disabled={isLoading || isSent}
@@ -428,7 +406,7 @@ const Contact = () => {
               viewport={{ once: true }}
               className="lg:col-span-5 space-y-5 lg:pl-4"
             >
-              {/* intro text */}
+              {/* intro */}
               <motion.div variants={slideUp} className="space-y-3 mb-8">
                 <h3 className="text-2xl font-bold text-foreground">
                   Contact Information
@@ -493,7 +471,6 @@ const Contact = () => {
                   size={90}
                   className="absolute -bottom-3 -right-3 text-white opacity-[0.08]"
                 />
-
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
@@ -507,6 +484,8 @@ const Contact = () => {
                   </p>
                   <motion.a
                     href="https://www.linkedin.com/in/shohag-miah-a484a93b2/"
+                    target="_blank"
+                    rel="noreferrer"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     className="block text-center py-3 rounded-2xl font-bold text-sm transition-colors duration-200"

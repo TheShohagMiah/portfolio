@@ -18,10 +18,23 @@ const app = express();
 // --- Global Middlewares ---
 app.use(helmet());
 app.use(morgan("dev"));
+
+const allowedOrigins = [process.env.ADMIN_URL, process.env.CLIENT_URL];
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Postman বা Server-to-Server call এর জন্য (origin undefined)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true); // ✅ Allow
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`)); // ❌ Block
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
 
