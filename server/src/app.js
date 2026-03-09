@@ -12,6 +12,9 @@ import aboutRouter from "./routes/aboutRoutes.js";
 import serviceRouter from "./routes/serviceRoutes.js";
 import projectRouter from "./routes/projectRoutes.js";
 import contactRouter from "./routes/contactRoutes.js";
+import miscellaneousRouter from "./routes/miscellaneousRoutes.js";
+import visitorRouter from "./routes/visitorsRoutes.js";
+import skillsRouter from "./routes/skillsRoutes.js";
 
 const app = express();
 
@@ -52,8 +55,12 @@ app.use("/api/auth", authRouter);
 app.use("/api/hero", heroRouter);
 app.use("/api/about", aboutRouter);
 app.use("/api/services", serviceRouter);
+app.use("/api/skills", skillsRouter);
 app.use("/api/projects", projectRouter);
 app.use("/api/contact", contactRouter);
+app.use("/api/miscellaneous", miscellaneousRouter);
+
+app.use("/api/visitors", visitorRouter);
 
 // --- 404 Handler ---
 app.use((req, res, next) => {

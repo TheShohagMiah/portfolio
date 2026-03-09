@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { RiArrowDownSLine, RiLogoutBoxLine } from "react-icons/ri";
+import { RiArrowDownSLine, RiLogoutBoxLine, RiMenu2Line } from "react-icons/ri";
 import {
   LuMoon,
   LuSunDim,
@@ -8,239 +8,503 @@ import {
   LuUserRoundSearch,
 } from "react-icons/lu";
 import { PiGearSixBold } from "react-icons/pi";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdminTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { Link } from "react-router-dom";
-import { RiMenu2Line } from "react-icons/ri";
+import { Link, useNavigate } from "react-router-dom";
 
+// ═══════════════════════════════════════════════════════
+//  DROPDOWN ANIMATION VARIANTS
+// ═══════════════════════════════════════════════════════
+const dropdownVariants = {
+  hidden: { opacity: 0, y: -8, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: { opacity: 0, y: -6, scale: 0.97, transition: { duration: 0.15 } },
+};
+
+// ═══════════════════════════════════════════════════════
+//  ICON BUTTON — reusable
+// ═══════════════════════════════════════════════════════
+const IconButton = ({ onClick, active, children, className = "" }) => (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={onClick}
+    className={`relative w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-200 ${
+      active
+        ? "bg-brand-muted border-brand text-brand"
+        : "bg-secondary border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+    } ${className}`}
+  >
+    {children}
+  </motion.button>
+);
+
+// ═══════════════════════════════════════════════════════
+//  HEADER
+// ═══════════════════════════════════════════════════════
 const Header = ({ onMenuClick }) => {
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const { adminTheme, toggleAdminTheme } = useAdminTheme();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Refs for each dropdown container
   const profileRef = useRef(null);
   const notificationsRef = useRef(null);
 
-  // Close dropdowns when clicking outside either container
+  // Live clock
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setShowProfileMenu(false);
-      }
+    const t = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target))
+        setShowProfile(false);
       if (
         notificationsRef.current &&
         !notificationsRef.current.contains(e.target)
-      ) {
+      )
         setShowNotifications(false);
-      }
     };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const getInitials = (fullName) => {
-    if (!fullName) return "";
-    return fullName
-      .trim()
-      .split(/\s+/)
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const fullAbbreviation = getInitials(user?.fullName);
+  // Keyboard shortcut ⌘K / Ctrl+K → focus search
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        document.getElementById("header-search")?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const handleLogout = async () => {
     try {
       await logout();
       navigate("/auth/signin", { replace: true });
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch (e) {
+      console.error("Logout failed:", e);
     }
   };
 
-  const notifications = [
-    { id: 1, text: "New message from client", time: "5 min ago", unread: true },
-    {
-      id: 2,
-      text: "Project deadline tomorrow",
-      time: "1 hour ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      text: "Server backup completed",
-      time: "3 hours ago",
-      unread: false,
-    },
-  ];
+  const initials =
+    user?.fullName
+      ?.trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "AU";
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
-    <header className="h-20 bg-background/20 backdrop-blur-xl border-b border-border px-6 flex items-center justify-between sticky top-0 z-30">
-      {/* ── Left: Search ────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 flex-1">
-        <button
-          onClick={onMenuClick}
-          className="lg:hidden p-2 bg-muted rounded-full transition-all"
-        >
-          <RiMenu2Line size={22} />
-        </button>
+    <header
+      className="sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-6
+      bg-background/60 backdrop-blur-xl border-b border-border"
+    >
+      {/* ── Top shimmer line ─────────────────────────────── */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[1px]
+        bg-gradient-to-r from-transparent via-primary/20 to-transparent pointer-events-none"
+      />
 
-        <div className="relative max-w-md w-full hidden sm:block group">
+      {/* ════════════════════════════════════════════════════
+          LEFT — Menu + Search
+      ════════════════════════════════════════════════════ */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Mobile hamburger */}
+        <IconButton onClick={onMenuClick} className="lg:hidden flex-shrink-0">
+          <RiMenu2Line size={18} />
+        </IconButton>
+
+        {/* Search bar */}
+        <div
+          className={`relative hidden sm:flex items-center max-w-xs w-full transition-all duration-300 ${
+            searchFocused ? "max-w-sm" : ""
+          }`}
+        >
           <LuSearch
-            size={18}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors"
+            size={15}
+            className={`absolute left-3 transition-colors duration-200 pointer-events-none ${
+              searchFocused ? "text-primary" : "text-muted-foreground"
+            }`}
           />
           <input
+            id="header-search"
             type="text"
-            placeholder="Search everything..."
-            className="w-full pl-10 pr-12 py-2.5 bg-muted/40 border border-border rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="Search..."
+            className={`w-full pl-9 pr-16 py-2 text-[12px] font-mono rounded-xl border transition-all duration-200
+              bg-secondary text-foreground placeholder:text-muted-foreground/50
+              focus:outline-none focus:ring-2 focus:ring-primary/20
+              ${
+                searchFocused
+                  ? "border-primary/40 bg-card"
+                  : "border-border hover:border-primary/20"
+              }`}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-border bg-background text-[10px] font-bold text-muted-foreground">
-            <span className="text-[12px]">⌘</span>K
+          {/* ⌘K badge */}
+          <div className="absolute right-2.5 flex items-center gap-0.5 pointer-events-none">
+            <kbd
+              className="px-1.5 py-0.5 rounded border border-border bg-muted
+              text-[9px] font-bold text-muted-foreground/60 font-mono"
+            >
+              ⌘K
+            </kbd>
           </div>
         </div>
       </div>
 
-      {/* ── Right: Actions ───────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleAdminTheme}
-          className="w-10 h-10 flex items-center justify-center bg-muted rounded-full transition-all text-primary"
-        >
-          {adminTheme === "dark" ? (
-            <LuSunDim size={20} />
-          ) : (
-            <LuMoon size={20} />
-          )}
-        </button>
-
-        {/* Notifications — ref wraps the whole trigger + dropdown */}
-        <div className="relative" ref={notificationsRef}>
-          <button
-            onClick={() => {
-              setShowNotifications((prev) => !prev);
-              setShowProfileMenu(false);
-            }}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all relative ${
-              showNotifications
-                ? "bg-primary/10 text-primary"
-                : "text-primary bg-muted"
-            }`}
-          >
-            <LuBell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background" />
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 bg-popover border border-border rounded-2xl shadow-2xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="px-5 py-4 border-b border-border flex justify-between items-center bg-muted/20">
-                <h3 className="font-bold text-sm text-foreground">
-                  Notifications
-                </h3>
-                <button className="text-[10px] font-bold text-primary hover:underline">
-                  Mark all read
-                </button>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="p-4 border-b border-border last:border-0 hover:bg-muted/50 transition-colors flex gap-3"
-                  >
-                    <div
-                      className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${
-                        notif.unread ? "bg-primary" : "bg-transparent"
-                      }`}
-                    />
-                    <div>
-                      <p
-                        className={`text-sm ${
-                          notif.unread
-                            ? "text-foreground font-medium"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {notif.text}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        {notif.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* ════════════════════════════════════════════════════
+          RIGHT — Clock, Theme, Notifications, Profile
+      ════════════════════════════════════════════════════ */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Live clock — hidden on small screens */}
+        <div className="hidden md:flex flex-col items-end mr-1">
+          <span className="text-[11px] font-black font-mono tabular-nums text-foreground tracking-wider">
+            {currentTime.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+          </span>
+          <span className="text-[8px] text-muted-foreground/40 font-mono uppercase tracking-widest">
+            {currentTime.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
         </div>
 
-        <div className="w-px h-6 bg-border mx-2" />
+        {/* Divider */}
+        <div className="hidden md:block w-px h-5 bg-border mx-1" />
 
-        {/* Profile — ref wraps the whole trigger + dropdown */}
-        <div className="relative" ref={profileRef}>
-          <button
+        {/* Theme toggle */}
+        <IconButton onClick={toggleAdminTheme}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={adminTheme}
+              initial={{ rotate: -30, opacity: 0, scale: 0.7 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: 30, opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.2 }}
+            >
+              {adminTheme === "dark" ? (
+                <LuSunDim size={16} />
+              ) : (
+                <LuMoon size={16} />
+              )}
+            </motion.span>
+          </AnimatePresence>
+        </IconButton>
+
+        {/* Notifications */}
+        <div className="relative" ref={notificationsRef}>
+          <IconButton
+            active={showNotifications}
             onClick={() => {
-              setShowProfileMenu((prev) => !prev);
+              setShowNotifications((p) => !p);
+              setShowProfile(false);
+            }}
+          >
+            <LuBell size={16} />
+            {/* Unread badge */}
+            {unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full
+                  bg-[var(--chart-5)] text-white text-[8px] font-black
+                  flex items-center justify-center ring-2 ring-background"
+              >
+                {unreadCount}
+              </motion.span>
+            )}
+          </IconButton>
+
+          <AnimatePresence>
+            {showNotifications && (
+              <motion.div
+                variants={dropdownVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="absolute right-0 mt-2 w-80 bg-popover border border-border
+                  rounded-2xl shadow-2xl z-50 overflow-hidden origin-top-right"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/40">
+                  <div className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full bg-[var(--chart-2)]"
+                    />
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] font-mono text-foreground">
+                      Notifications
+                    </h3>
+                  </div>
+                  <button
+                    className="text-[9px] font-bold uppercase tracking-widest font-mono
+                    text-brand hover:text-brand-soft transition-colors"
+                  >
+                    Clear all
+                  </button>
+                </div>
+
+                {/* List */}
+                <div
+                  className="max-h-72 overflow-y-auto divide-y divide-border
+                  [&::-webkit-scrollbar]:w-1
+                  [&::-webkit-scrollbar-thumb]:bg-border
+                  [&::-webkit-scrollbar-thumb]:rounded-full"
+                >
+                  {notifications.map((n, i) => (
+                    <motion.div
+                      key={n.id}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`flex gap-3 items-start px-4 py-3.5 cursor-pointer
+                        transition-colors duration-150 group
+                        ${n.unread ? "hover:bg-secondary/60" : "hover:bg-secondary/30 opacity-60"}`}
+                    >
+                      {/* Dot */}
+                      <div className="mt-1.5 flex-shrink-0">
+                        {n.unread ? (
+                          <motion.span
+                            animate={{ scale: [1, 1.3, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="block w-1.5 h-1.5 rounded-full bg-brand"
+                          />
+                        ) : (
+                          <span className="block w-1.5 h-1.5 rounded-full bg-border" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-[12px] leading-snug truncate ${
+                            n.unread
+                              ? "text-foreground font-semibold"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {n.text}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground/50 font-mono mt-1 uppercase tracking-widest">
+                          {n.time}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 py-2.5 border-t border-border bg-secondary/20">
+                  <button
+                    className="w-full text-[9px] font-bold uppercase tracking-[0.25em]
+                    font-mono text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    View all notifications
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-border mx-1" />
+
+        {/* Profile */}
+        <div className="relative" ref={profileRef}>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setShowProfile((p) => !p);
               setShowNotifications(false);
             }}
-            className="flex items-center gap-3 p-1 rounded-xl hover:bg-muted transition-all"
+            className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-xl border border-border
+              bg-secondary hover:border-primary/30 transition-all duration-200"
           >
+            {/* Avatar */}
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black shadow-lg"
+              className="w-7 h-7 rounded-lg flex items-center justify-center
+                text-[10px] font-black text-brand-fg flex-shrink-0"
               style={{
                 background:
-                  "linear-gradient(to top right, var(--brand), var(--brand-soft))",
-                color: "var(--brand-foreground)",
+                  "linear-gradient(135deg, var(--brand), var(--brand-soft))",
+                boxShadow: "0 2px 10px var(--brand-glow)",
               }}
             >
-              {fullAbbreviation}
+              {initials}
             </div>
-            <RiArrowDownSLine
-              className={`text-muted-foreground transition-transform ${
-                showProfileMenu ? "rotate-180" : ""
-              }`}
-            />
-          </button>
 
-          {showProfileMenu && (
-            <div className="absolute right-0 mt-3 w-56 bg-popover border border-border rounded-2xl shadow-2xl z-20 p-2 animate-in fade-in slide-in-from-top-2">
-              <div className="px-3 py-2 mb-2 border-b border-border/50">
-                <p className="text-sm font-bold truncate">{user?.fullName}</p>
-                <a
-                  href={`mailto:${user?.email}`}
-                  className="text-[10px] font-medium underline"
-                  style={{ color: "var(--brand)" }}
-                >
-                  {user?.email.toLowerCase()}
-                </a>
-              </div>
-              <Link
-                to={`/admin/profile/me/${user._id}`}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+            {/* Name — hidden on small screens */}
+            <div className="hidden md:block text-left">
+              <p className="text-[11px] font-bold text-foreground leading-none truncate max-w-[80px]">
+                {user?.fullName?.split(" ")[0] || "Admin"}
+              </p>
+              <p
+                className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground/50 mt-0.5"
+                style={{ color: "var(--brand-soft)" }}
               >
-                <LuUserRoundSearch size={16} /> My Profile
-              </Link>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
-                <PiGearSixBold size={16} /> Settings
-              </button>
-              <div className="my-1 border-t border-border/50" />
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-all font-semibold"
-              >
-                <RiLogoutBoxLine size={16} /> Sign Out
-              </button>
+                {user?.role || "admin"}
+              </p>
             </div>
-          )}
+
+            <motion.div
+              animate={{ rotate: showProfile ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="ml-0.5"
+            >
+              <RiArrowDownSLine
+                size={14}
+                className="text-muted-foreground/60"
+              />
+            </motion.div>
+          </motion.button>
+
+          {/* Profile dropdown */}
+          <AnimatePresence>
+            {showProfile && (
+              <motion.div
+                variants={dropdownVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="absolute right-0 mt-2 w-56 bg-popover border border-border
+                  rounded-2xl shadow-2xl z-50 overflow-hidden origin-top-right"
+              >
+                {/* User info */}
+                <div className="px-4 py-3.5 border-b border-border bg-secondary/40">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center
+                        text-xs font-black text-brand-fg flex-shrink-0"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--brand), var(--brand-soft))",
+                        boxShadow: "0 2px 12px var(--brand-glow)",
+                      }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">
+                        {user?.fullName}
+                      </p>
+                      <a
+                        href={`mailto:${user?.email}`}
+                        className="text-[9px] font-mono truncate block hover:underline"
+                        style={{ color: "var(--brand-soft)" }}
+                      >
+                        {user?.email?.toLowerCase()}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div className="p-1.5">
+                  {[
+                    {
+                      to: `/admin/profile/me/${user?._id}`,
+                      icon: <LuUserRoundSearch size={14} />,
+                      label: "My Profile",
+                      isLink: true,
+                    },
+                    {
+                      icon: <PiGearSixBold size={14} />,
+                      label: "Settings",
+                      isLink: false,
+                    },
+                  ].map((item, i) =>
+                    item.isLink ? (
+                      <Link
+                        key={i}
+                        to={item.to}
+                        onClick={() => setShowProfile(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px]
+                          text-muted-foreground hover:text-foreground hover:bg-secondary
+                          transition-all duration-150"
+                      >
+                        {item.icon}
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <button
+                        key={i}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px]
+                          text-muted-foreground hover:text-foreground hover:bg-secondary
+                          transition-all duration-150"
+                      >
+                        {item.icon}
+                        {item.label}
+                      </button>
+                    ),
+                  )}
+
+                  <div className="my-1 h-[1px] bg-border mx-1" />
+
+                  <motion.button
+                    whileHover={{ x: 2 }}
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px]
+                      font-semibold text-destructive hover:bg-destructive/10
+                      transition-all duration-150"
+                  >
+                    <RiLogoutBoxLine size={14} />
+                    Sign Out
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>
   );
 };
+
+// ── Static notifications data ──────────────────────────
+const notifications = [
+  { id: 1, text: "New message from client", time: "5 min ago", unread: true },
+  {
+    id: 2,
+    text: "Project deadline tomorrow",
+    time: "1 hour ago",
+    unread: true,
+  },
+  {
+    id: 3,
+    text: "Server backup completed",
+    time: "3 hours ago",
+    unread: false,
+  },
+];
 
 export default Header;

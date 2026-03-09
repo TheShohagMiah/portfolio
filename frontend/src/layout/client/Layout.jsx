@@ -7,8 +7,10 @@ import Skills from "../../components/client/Skills";
 import Footer from "../../components/client/Footer";
 import Contact from "../../components/client/Contact";
 import Services from "../../components/client/Services";
+import useTrackVisitor from "../../hooks/useTrackVisitor";
 
 const Layout = () => {
+  useTrackVisitor();
   return (
     <div>
       <header>

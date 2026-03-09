@@ -20,15 +20,20 @@ import PublicRoute from "./components/PublicRoute";
 import Profile from "./pages/profile/Profile";
 import EditProject from "./pages/project/EditProject";
 import Messages from "./pages/contact/Messages";
+import AllSkills from "./pages/skills/AllSkills";
 
 const App = () => {
   return (
     <div className="bg-white dark:bg-[#050505] transition-colors duration-300">
-      <Toaster />
+      <Toaster position="top-right" />
+
       <Routes>
-        {/* --- Public Auth Routes --- */}
+        {/* ── Root redirect ──────────────────────────────────── */}
+        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+
+        {/* ── Public Auth Routes ─────────────────────────────── */}
         <Route
-          path="auth"
+          path="/auth"
           element={
             <PublicRoute>
               <Outlet />
@@ -40,30 +45,49 @@ const App = () => {
           <Route path="verify-account" element={<OtpVerification />} />
         </Route>
 
-        {/* --- Protected Admin Routes --- */}
+        {/* ── Protected Admin Routes ─────────────────────────── */}
         <Route
-          path="admin"
+          path="/admin"
           element={
             <ProtectedRoute>
               <AdminLayout />
             </ProtectedRoute>
           }
         >
+          {/* Default redirect → dashboard */}
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
+
+          {/* Dashboard */}
           <Route path="dashboard" element={<Dashboard />} />
+
+          {/* Hero */}
           <Route path="hero-management" element={<Hero />} />
+
+          {/* About / Bio */}
           <Route path="about" element={<UpdateBioForm />} />
+
+          {/* Skills */}
           <Route path="skills/new" element={<AddSkill />} />
+          <Route path="skills" element={<AllSkills />} />
+
+          {/* Projects */}
           <Route path="projects" element={<AllProjects />} />
           <Route path="projects/new" element={<AddProject />} />
-          <Route path="services" element={<AllServices />} />
           <Route path="projects/edit/:id" element={<EditProject />} />
+
+          {/* Services */}
+          <Route path="services" element={<AllServices />} />
           <Route path="services/new" element={<AddService />} />
+
+          {/* Contact & Messages */}
           <Route path="contact" element={<ContactManagement />} />
           <Route path="messages" element={<Messages />} />
+
+          {/* Profile */}
           <Route path="profile/me/:id" element={<Profile />} />
         </Route>
 
+        {/* ── 404 ────────────────────────────────────────────── */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

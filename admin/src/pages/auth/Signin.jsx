@@ -1,32 +1,80 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { motion } from "framer-motion";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMail,
   FiLock,
   FiArrowRight,
   FiGithub,
-  FiChrome,
   FiEye,
   FiEyeOff,
   FiAlertCircle,
 } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import SocialButton from "../../components/shared/SocialButton";
-import { Field } from "../../components/shared/InputField";
+import { LuLoader } from "react-icons/lu";
 import { useAuth } from "../../contexts/AuthContext";
-
-import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../../validators/auth/authValidations";
 
-// Theme-aware input styling (unchanged)
-export const inputCls = (hasError) =>
-  `w-full px-4 py-3 rounded-xl text-sm transition-all duration-200
-   bg-gray-100 border border-gray-200 text-gray-900 placeholder:text-gray-400
-   dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-gray-500
-   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-   ${hasError ? "border-red-500 ring-red-500/10" : "hover:border-primary/30"}`;
+// ═══════════════════════════════════���═══════════════════════════
+//  INPUT CLASS — uses CSS vars, no hardcoded colors
+// ═══════════════════════════════════════════════════════════════
+const inputCls = (hasError = false) =>
+  `w-full bg-secondary border rounded-xl py-3 px-4 text-sm text-foreground
+   placeholder:text-muted-foreground/50 focus:outline-none transition-all duration-200
+   ${
+     hasError
+       ? "border-destructive/60 focus:ring-2 focus:ring-destructive/20"
+       : "border-border hover:border-primary/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+   }`;
 
+// ═══════════════════════════════════════════════════════════════
+//  FORM FIELD
+// ═══════════════════════════════════════════════════════════════
+const FormField = ({ label, error, children }) => (
+  <div className="space-y-1.5">
+    <label className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/60 font-mono ml-0.5">
+      {label}
+    </label>
+    {children}
+    <AnimatePresence>
+      {error && (
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          className="text-[10px] text-destructive ml-1 font-mono"
+        >
+          {error}
+        </motion.p>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════
+//  SOCIAL BUTTON
+// ═══════════════════════════════════════════════════════════════
+const SocialBtn = ({ icon, label, onClick }) => (
+  <motion.button
+    type="button"
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className="flex items-center justify-center gap-2.5 w-full py-3 px-4 rounded-xl
+      border border-border bg-secondary text-foreground text-[10px] font-black
+      uppercase tracking-widest font-mono hover:border-primary/30
+      hover:bg-secondary/80 transition-all duration-200"
+  >
+    <span className="text-base">{icon}</span>
+    {label}
+  </motion.button>
+);
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
 const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,141 +95,232 @@ const SignIn = () => {
     mode: "onBlur",
   });
 
-  // If already logged in, redirect away from signin
+  // ── Redirect if already logged in ───────────────────────────
   useEffect(() => {
     if (user) navigate(from, { replace: true });
   }, [user, from, navigate]);
 
+  // ── Submit ───────────────────────────────────────────────────
   const onSubmit = async (data) => {
     setFormError("");
     const result = await login(data);
-
     if (result?.success) {
       navigate(from, { replace: true });
     } else {
-      // Ensure we show a visible error even if login() only returns success=false
       setFormError(result?.message || "Invalid email or password.");
     }
   };
 
-  const handleMouseMove = (e) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
-
+  // ════════════════════════════════════════════════════════════
   return (
     <div
-      onMouseMove={handleMouseMove}
-      className="min-h-screen w-full flex items-center justify-center p-4 transition-colors duration-300
-                 bg-white text-gray-900 dark:bg-[#050505] dark:text-white overflow-hidden"
+      onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+      className="min-h-screen w-full flex items-center justify-center p-4 bg-background text-foreground overflow-hidden"
     >
-      {/* Dynamic Background Glow */}
-      <div className="fixed inset-0 pointer-events-none">
+      {/* ── Dynamic cursor glow ──────────────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div
-          className="absolute inset-0 z-0 transition-opacity duration-500 opacity-20 dark:opacity-40"
+          className="absolute inset-0 transition-opacity duration-500"
           style={{
-            background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(16, 185, 129, 0.15), transparent 40%)`,
+            background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px,
+              color-mix(in oklch, var(--brand, var(--primary)) 12%, transparent),
+              transparent 40%)`,
           }}
         />
       </div>
 
+      {/* ── Ambient glows ────────────────────────────────────── */}
+      <div
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full blur-[120px] opacity-[0.06] pointer-events-none"
+        style={{ background: "var(--brand, var(--primary))" }}
+      />
+      <div
+        className="fixed bottom-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px] opacity-[0.04] pointer-events-none"
+        style={{ background: "var(--brand, var(--primary))" }}
+      />
+
+      {/* ── Card ─────────────────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[440px] relative z-10"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-[420px] relative z-10"
       >
-        <div className="bg-white border border-gray-200 shadow-2xl dark:bg-white/[0.02] dark:border-white/5 dark:backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-12">
-          <div className="text-center mb-10">
-            <div className="inline-block px-3 py-1 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-black tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-6">
-              WELCOME BACK
-            </div>
-            <h2 className="text-4xl font-bold tracking-tighter italic font-serif">
-              Sign In
-            </h2>
-          </div>
+        <div className="relative bg-card border border-border rounded-3xl shadow-2xl overflow-hidden">
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-          {/* Top-level error */}
-          {formError && (
-            <div className="mb-5 flex items-start gap-2 rounded-2xl p-4 border border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
-              <FiAlertCircle className="mt-0.5" />
-              <p className="text-sm">{formError}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <Field label="Email" required error={errors.email?.message}>
-              <div className="relative">
-                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  {...register("email")}
-                  placeholder="name@company.com"
-                  className={`${inputCls(!!errors.email)} pl-11`}
+          <div className="p-8 md:p-10">
+            {/* ── Header ───────────────────────────────────── */}
+            <div className="text-center mb-8">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-secondary mb-5">
+                <motion.span
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: "var(--chart-2)" }}
                 />
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground font-mono">
+                  Welcome Back
+                </span>
               </div>
-            </Field>
 
-            <Field label="Password" required error={errors.password?.message}>
-              <div className="relative">
-                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  {...register("password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className={`${inputCls(!!errors.password)} pl-11`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                  aria-label="Toggle password visibility"
+              <h1 className="text-4xl font-bold tracking-tighter italic font-serif text-foreground">
+                Sign In
+              </h1>
+              <p className="text-[11px] text-muted-foreground/50 font-mono uppercase tracking-widest mt-2">
+                Access your portfolio dashboard
+              </p>
+            </div>
+
+            {/* ── Form error banner ────────────────────────── */}
+            <AnimatePresence>
+              {formError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -8, height: 0 }}
+                  className="mb-5 overflow-hidden"
                 >
-                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
-              </div>
-            </Field>
-
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              disabled={isSubmitting}
-              type="submit"
-              className="w-full bg-gray-900 text-white dark:bg-white dark:text-black py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 mt-4 hover:bg-primary dark:hover:bg-primary transition-all duration-300 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  Access Account <FiArrowRight />
-                </>
+                  <div
+                    className="flex items-start gap-2.5 rounded-xl p-3.5 border text-sm"
+                    style={{
+                      borderColor:
+                        "color-mix(in oklch, var(--destructive) 30%, transparent)",
+                      backgroundColor:
+                        "color-mix(in oklch, var(--destructive) 8%,  transparent)",
+                      color: "var(--destructive)",
+                    }}
+                  >
+                    <FiAlertCircle size={15} className="mt-0.5 shrink-0" />
+                    <p className="text-[11px] font-mono">{formError}</p>
+                  </div>
+                </motion.div>
               )}
-            </motion.button>
-          </form>
+            </AnimatePresence>
 
-          {/* Divider */}
-          <div className="relative my-10">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-white/5"></div>
-            </div>
-            <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]">
-              <span className="bg-white dark:bg-[#050505] px-4 text-gray-400">
-                Quick Connect
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <SocialButton icon={<FiChrome />} label="Google" />
-            <SocialButton icon={<FiGithub />} label="GitHub" />
-          </div>
-
-          <p className="mt-10 text-center text-gray-500 text-xs font-medium">
-            New here?{" "}
-            <Link
-              to="/auth/signup"
-              className="text-gray-900 dark:text-white font-bold hover:text-primary transition-colors underline-offset-4 underline decoration-current/10"
+            {/* ── Form ─────────────────────────────────────── */}
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+              className="space-y-4"
             >
-              Create account
-            </Link>
-          </p>
+              {/* Email */}
+              <FormField label="Email Address" error={errors.email?.message}>
+                <div className="relative">
+                  <FiMail
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none"
+                  />
+                  <input
+                    {...register("email")}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@company.com"
+                    className={`${inputCls(!!errors.email)} pl-10`}
+                  />
+                </div>
+              </FormField>
+
+              {/* Password */}
+              <FormField label="Password" error={errors.password?.message}>
+                <div className="relative">
+                  <FiLock
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none"
+                  />
+                  <input
+                    {...register("password")}
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className={`${inputCls(!!errors.password)} pl-10 pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? (
+                      <FiEyeOff size={15} />
+                    ) : (
+                      <FiEye size={15} />
+                    )}
+                  </button>
+                </div>
+              </FormField>
+
+              {/* Forgot password link */}
+              <div className="flex justify-end">
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-[9px] font-bold uppercase tracking-widest font-mono text-muted-foreground/40 hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Submit */}
+              <motion.button
+                type="submit"
+                disabled={isSubmitting}
+                whileHover={!isSubmitting ? { scale: 1.01 } : {}}
+                whileTap={!isSubmitting ? { scale: 0.99 } : {}}
+                className="relative w-full overflow-hidden flex items-center justify-center gap-2.5
+                  py-3.5 rounded-xl bg-primary text-primary-foreground
+                  text-[10px] font-black uppercase tracking-widest font-mono
+                  shadow-lg transition-all duration-200 disabled:opacity-50 mt-2"
+              >
+                {/* Shimmer */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700" />
+                <span className="relative z-10 flex items-center gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <LuLoader size={13} className="animate-spin" />{" "}
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      Access Account <FiArrowRight size={13} />
+                    </>
+                  )}
+                </span>
+              </motion.button>
+            </form>
+
+            {/* ── Divider ──────────────────────────────────── */}
+            <div className="relative my-7">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-4 bg-card text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/30 font-mono">
+                  Quick Connect
+                </span>
+              </div>
+            </div>
+
+            {/* ── Social buttons ────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-3">
+              <SocialBtn icon={<FcGoogle />} label="Google" />
+              <SocialBtn icon={<FiGithub />} label="GitHub" />
+            </div>
+
+            {/* ── Footer link ───────────────────────────────── */}
+            <p className="mt-8 text-center text-[10px] font-mono text-muted-foreground/40 uppercase tracking-widest">
+              New here?{" "}
+              <Link
+                to="/auth/signup"
+                className="text-foreground font-black hover:text-primary transition-colors underline underline-offset-4 decoration-border"
+              >
+                Create account
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

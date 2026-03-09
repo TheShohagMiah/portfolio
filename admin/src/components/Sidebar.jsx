@@ -1,33 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { RiLightbulbFlashLine, RiLogoutBoxRLine } from "react-icons/ri";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { FiGrid, FiZap, FiMail } from "react-icons/fi";
-import { MdKeyboardArrowDown, MdDesignServices } from "react-icons/md";
-import { LuUserPen } from "react-icons/lu";
-import { AiOutlineFundProjectionScreen } from "react-icons/ai";
-import { GrContact } from "react-icons/gr";
-import { TbUserStar } from "react-icons/tb";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { RiLogoutBoxRLine } from "react-icons/ri";
+import { TbLayoutDashboard, TbMessage } from "react-icons/tb";
+import { PiLightningBold } from "react-icons/pi";
+import { LuNotebookPen } from "react-icons/lu";
+import { HiOutlineRectangleStack } from "react-icons/hi2";
+import { GoStarFill } from "react-icons/go";
+import { MdOutlineWorkspaces } from "react-icons/md";
+import { FiChevronDown } from "react-icons/fi";
+import { BsLightningChargeFill } from "react-icons/bs";
 import { useAuth } from "../contexts/AuthContext";
 
+// ── sidebar items + nav groups unchanged ──────────────────────
 const sidebarItems = [
   {
     title: "Dashboard",
-    icon: <FiGrid size={18} />,
+    icon: <TbLayoutDashboard size={16} />,
     path: "/admin/dashboard",
   },
   {
     title: "Hero",
-    icon: <FiZap size={18} />,
+    icon: <PiLightningBold size={16} />,
     submenu: [{ title: "Hero Management", path: "/admin/hero-management" }],
   },
   {
     title: "About Me",
-    icon: <LuUserPen size={18} />,
+    icon: <LuNotebookPen size={16} />,
     submenu: [{ title: "Update Bio", path: "/admin/about" }],
   },
   {
     title: "Services",
-    icon: <MdDesignServices size={18} />,
+    icon: <HiOutlineRectangleStack size={16} />,
     submenu: [
       { title: "All Services", path: "/admin/services" },
       { title: "Add Service", path: "/admin/services/new" },
@@ -35,7 +39,7 @@ const sidebarItems = [
   },
   {
     title: "Skills",
-    icon: <TbUserStar size={18} />,
+    icon: <GoStarFill size={14} />,
     submenu: [
       { title: "Skill List", path: "/admin/skills" },
       { title: "Add Skill", path: "/admin/skills/new" },
@@ -43,217 +47,376 @@ const sidebarItems = [
   },
   {
     title: "Projects",
-    icon: <AiOutlineFundProjectionScreen size={20} />,
+    icon: <MdOutlineWorkspaces size={17} />,
     submenu: [
       { title: "All Projects", path: "/admin/projects" },
       { title: "Create New", path: "/admin/projects/new" },
     ],
   },
-  // {
-  //   title: "Contact",
-  //   icon: <GrContact size={20} />,
-  //   path: "/admin/contact",
-  // },
-  {
-    title: "Messages",
-    icon: <FiMail size={18} />,
-    path: "/admin/messages",
-  },
+  { title: "Messages", icon: <TbMessage size={16} />, path: "/admin/messages" },
 ];
 
+const NAV_GROUPS = [
+  { label: "Overview", items: [0] },
+  { label: "Content", items: [1, 2, 3, 4, 5] },
+  { label: "Inbox", items: [6] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  USER CARD SKELETON
+// ═══════════════════════════════════════════════════════════════
+const UserCardSkeleton = () => (
+  <div className="flex items-center gap-3 px-3 py-3 rounded-2xl bg-secondary/60 border border-border">
+    <div className="w-9 h-9 rounded-xl bg-muted animate-pulse flex-shrink-0" />
+    <div className="flex-1 space-y-2">
+      <div className="h-3 bg-muted rounded animate-pulse w-24" />
+      <div className="h-2 bg-muted rounded animate-pulse w-14" />
+    </div>
+    <div className="w-2 h-2 rounded-full bg-muted animate-pulse flex-shrink-0" />
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════════════════════════════════
 const Sidebar = ({ onClose }) => {
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
 
-  const handleLinkClick = () => {
-    if (window.innerWidth < 1024 && onClose) {
-      onClose();
-    }
-  };
+  // ✅ authChecked tells us the initial check is done
+  const { logout, user, authChecked } = useAuth();
 
-  // ✅ Fix 3: sidebarItems moved outside component so no dependency warning
   useEffect(() => {
     sidebarItems.forEach((item, index) => {
-      if (item.submenu?.some((sub) => location.pathname === sub.path)) {
+      if (item.submenu?.some((s) => location.pathname === s.path))
         setOpenSubmenu(index);
-      }
     });
   }, [location.pathname]);
 
-  const toggleSubmenu = (index) => {
-    setOpenSubmenu(openSubmenu === index ? null : index);
+  const handleLinkClick = () => {
+    if (window.innerWidth < 1024 && onClose) onClose();
   };
 
   const handleLogOut = async () => {
     try {
       await logout();
       navigate("/auth/signin", { replace: true });
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch (e) {
+      console.error("Logout failed:", e);
     }
   };
 
-  return (
-    <div className="bg-card text-muted-foreground h-full flex flex-col transition-colors duration-500">
-      {/* ── Header ────────────────────────────────────────── */}
-      <div className="p-6">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-sm flex items-center justify-center bg-brand shadow-brand"
-            style={{ boxShadow: "0 0 20px var(--brand-glow)" }}
-          >
-            <RiLightbulbFlashLine size={22} className="text-brand-fg" />
-          </div>
+  // ✅ Only compute after user is available
+  const initials =
+    user?.fullName
+      ?.split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AU";
 
-          <div className="flex flex-col">
-            <span className="font-bold text-foreground text-sm uppercase tracking-widest">
-              {user?.fullName || "Guest User"}
-            </span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ backgroundColor: "var(--brand)" }}
-              />
-              <span
-                className="text-[10px] font-semibold uppercase"
-                style={{ color: "var(--brand)" }}
-              >
-                {user?.role}
-              </span>
+  return (
+    <div className="relative h-full flex flex-col bg-card text-muted-foreground overflow-hidden select-none">
+      {/* ── Ambient top glow ──────────────────────────── */}
+      <div
+        className="pointer-events-none absolute top-0 left-0 right-0 h-40 opacity-25 z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, var(--brand-glow), transparent 70%)",
+        }}
+      />
+
+      {/* ── Top border accent ─────────────────────────── */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[2px] z-10"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, var(--brand), transparent)",
+        }}
+      />
+
+      {/* ════════════════════════════════════════════════
+          HEADER
+      ════════════════════════════════════════════════ */}
+      <div className="relative z-10 px-5 pt-7 pb-5">
+        {/* ✅ User card — show skeleton until authChecked */}
+        {!authChecked ? (
+          <UserCardSkeleton />
+        ) : (
+          <div className="flex items-center gap-3 px-3 py-3 rounded-2xl bg-secondary/60 border border-border">
+            {/* Avatar */}
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-[11px] font-black text-brand-fg flex-shrink-0"
+              style={{
+                background: "var(--brand)",
+                boxShadow: "0 2px 12px var(--brand-glow)",
+              }}
+            >
+              {initials}
             </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground truncate leading-none">
+                {/* ✅ user is guaranteed to be populated here */}
+                {user?.fullName ?? "Unknown"}
+              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <motion.span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: "var(--brand)" }}
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <span
+                  className="text-[9px] font-bold uppercase tracking-[0.2em] font-mono"
+                  style={{ color: "var(--brand-soft)" }}
+                >
+                  {user?.role ?? "admin"}
+                </span>
+              </div>
+            </div>
+
+            {/* Online dot */}
+            <div
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{
+                background: "var(--chart-2)",
+                boxShadow: "0 0 6px var(--chart-2)",
+              }}
+            />
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Navigation ──────────────────────────────────────────── */}
-      <nav className="flex-1 px-4 py-2 overflow-y-auto">
-        <ul className="space-y-1.5">
-          {sidebarItems.map((item, index) => {
-            const isSubmenuOpen = openSubmenu === index;
-            const isParentActive =
-              item.submenu?.some((sub) => location.pathname === sub.path) ||
-              location.pathname === item.path;
+      {/* ════════════════════════════════════════════════
+          NAVIGATION — unchanged
+      ════════════════════════════════════════════════ */}
+      <nav
+        className="flex-1 overflow-y-auto px-4 pb-4 relative z-10
+        [&::-webkit-scrollbar]:w-1
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-border
+        [&::-webkit-scrollbar-thumb]:rounded-full"
+      >
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-5">
+            <div className="flex items-center gap-2 px-2 mb-2">
+              <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 font-mono">
+                {group.label}
+              </span>
+              <div className="flex-1 h-[1px] bg-border/50" />
+            </div>
 
-            return (
-              <li key={index} className="relative">
-                {item.submenu ? (
-                  // ── Parent with submenu ──────────────────────────────────
-                  <div>
-                    <button
-                      onClick={() => toggleSubmenu(index)}
-                      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-sm transition-all duration-300 group ${
-                        isSubmenuOpen || isParentActive
-                          ? "bg-secondary text-foreground"
-                          : "hover:bg-secondary/50 hover:text-foreground"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={
-                            isParentActive
-                              ? ""
-                              : "text-muted-foreground group-hover:text-foreground"
+            <ul className="space-y-1">
+              {group.items.map((itemIndex) => {
+                const item = sidebarItems[itemIndex];
+                const isSubmenuOpen = openSubmenu === itemIndex;
+                const isParentActive =
+                  item.submenu?.some((s) => location.pathname === s.path) ||
+                  location.pathname === item.path;
+
+                return (
+                  <li key={itemIndex}>
+                    {item.submenu ? (
+                      <div>
+                        <button
+                          onClick={() =>
+                            setOpenSubmenu(isSubmenuOpen ? null : itemIndex)
                           }
-                          style={
-                            isParentActive ? { color: "var(--brand)" } : {}
-                          }
+                          className={`group w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
+                            isParentActive || isSubmenuOpen
+                              ? "bg-secondary text-foreground"
+                              : "hover:bg-secondary/50 hover:text-foreground"
+                          }`}
                         >
-                          {item.icon}
-                        </span>
-                        <span className="font-medium text-[13px]">
-                          {item.title}
-                        </span>
-                      </div>
-                      <MdKeyboardArrowDown
-                        size={18}
-                        className={`transition-transform duration-300 opacity-40 ${
-                          isSubmenuOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    <div
-                      className={`overflow-hidden transition-all duration-500 ${
-                        isSubmenuOpen
-                          ? "max-h-96 opacity-100 mt-1"
-                          : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      <ul className="ml-6 pl-4 border-l border-border space-y-1">
-                        {item.submenu.map((subItem, subIndex) => (
-                          <li key={subIndex}>
-                            {/* ✅ Fix 1: use className fn OR children fn, not both */}
-                            <NavLink
-                              end
-                              to={subItem.path}
-                              onClick={handleLinkClick}
-                              className={({ isActive }) =>
-                                `relative block px-4 py-2 rounded-sm text-[12px] font-medium transition-all duration-200 ${
-                                  isActive
-                                    ? "bg-brand-muted/60"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                                }`
-                              }
-                              style={({ isActive }) =>
-                                isActive ? { color: "var(--brand)" } : {}
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                                isParentActive
+                                  ? "bg-brand-muted"
+                                  : "bg-muted group-hover:bg-secondary"
+                              }`}
+                              style={
+                                isParentActive ? { color: "var(--brand)" } : {}
                               }
                             >
-                              {subItem.title}
-                              {/* ✅ Fix 1: active dot moved outside children fn */}
-                            </NavLink>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ) : (
-                  // ── Direct link (no submenu) ─────────────────────────────
-                  // ✅ Fix 1: use only className fn, no children render prop
-                  <NavLink
-                    to={item.path}
-                    onClick={handleLinkClick}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 rounded-sm transition-all duration-300 ${
-                        isActive
-                          ? "bg-brand text-brand-fg shadow-brand"
-                          : "hover:bg-secondary/50 hover:text-foreground"
-                      }`
-                    }
-                  >
-                    <span
-                      className={
-                        location.pathname === item.path
-                          ? "text-brand-fg"
-                          : "text-muted-foreground opacity-70"
-                      }
-                    >
-                      {item.icon}
-                    </span>
-                    <span className="font-medium text-[13px]">
-                      {item.title}
-                    </span>
-                  </NavLink>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                              <span
+                                className={
+                                  !isParentActive ? "text-muted-foreground" : ""
+                                }
+                              >
+                                {item.icon}
+                              </span>
+                            </div>
+                            <span className="text-[12px] font-semibold">
+                              {item.title}
+                            </span>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: isSubmenuOpen ? 180 : 0 }}
+                            transition={{ duration: 0.25, ease: "easeInOut" }}
+                          >
+                            <FiChevronDown
+                              size={14}
+                              className="text-muted-foreground/40"
+                            />
+                          </motion.div>
+                        </button>
+
+                        <AnimatePresence initial={false}>
+                          {isSubmenuOpen && (
+                            <motion.ul
+                              key="sub"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{
+                                duration: 0.25,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                              className="overflow-hidden mt-1 ml-4 pl-3 border-l border-border space-y-0.5"
+                            >
+                              {item.submenu.map((sub, si) => (
+                                <li key={si}>
+                                  <NavLink
+                                    end
+                                    to={sub.path}
+                                    onClick={handleLinkClick}
+                                    className={({ isActive }) =>
+                                      `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                                        isActive
+                                          ? "bg-brand-muted text-foreground"
+                                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                      }`
+                                    }
+                                  >
+                                    {({ isActive }) => (
+                                      <>
+                                        <span
+                                          className={`w-1 h-1 rounded-full flex-shrink-0 transition-all duration-200 ${
+                                            isActive ? "scale-100" : "scale-0"
+                                          }`}
+                                          style={{ background: "var(--brand)" }}
+                                        />
+                                        <span
+                                          style={
+                                            isActive
+                                              ? { color: "var(--brand)" }
+                                              : {}
+                                          }
+                                        >
+                                          {sub.title}
+                                        </span>
+                                        {isActive && (
+                                          <motion.span
+                                            layoutId={`sub-pill-${itemIndex}`}
+                                            className="ml-auto w-1 h-4 rounded-full"
+                                            style={{
+                                              background: "var(--brand)",
+                                            }}
+                                            transition={{
+                                              type: "spring",
+                                              stiffness: 380,
+                                              damping: 30,
+                                            }}
+                                          />
+                                        )}
+                                      </>
+                                    )}
+                                  </NavLink>
+                                </li>
+                              ))}
+                            </motion.ul>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      <NavLink
+                        to={item.path}
+                        onClick={handleLinkClick}
+                        className={({ isActive }) =>
+                          `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 overflow-hidden ${
+                            isActive
+                              ? "text-brand-fg"
+                              : "hover:bg-secondary/50 hover:text-foreground"
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <motion.div
+                                layoutId="active-nav-pill"
+                                className="absolute inset-0 rounded-xl bg-brand"
+                                style={{
+                                  boxShadow: "0 4px 20px var(--brand-glow)",
+                                }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 380,
+                                  damping: 30,
+                                }}
+                              />
+                            )}
+                            <div
+                              className={`relative z-10 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                                isActive
+                                  ? "bg-brand-fg/10"
+                                  : "bg-muted group-hover:bg-secondary"
+                              }`}
+                            >
+                              <span
+                                className={
+                                  isActive
+                                    ? "text-brand-fg"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {item.icon}
+                              </span>
+                            </div>
+                            <span className="relative z-10 text-[12px] font-semibold">
+                              {item.title}
+                            </span>
+                            {isActive && (
+                              <span className="relative z-10 ml-auto w-1 h-4 rounded-full bg-brand-fg/40" />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
-      {/* ── Footer ───────────────────────────────────── */}
-      <div className="p-4 bg-gradient-to-t from-background to-transparent mt-auto">
-        <button
+      {/* ════════════════════════════════════════════════
+          FOOTER
+      ════════════════════════════════════════════════ */}
+      <div className="relative z-10 p-4 border-t border-border bg-card">
+        <p className="text-center text-[8px] font-mono uppercase tracking-[0.3em] text-muted-foreground/30 mb-3">
+          Portfolio OS · v2.0
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={handleLogOut}
-          className="group w-full flex items-center justify-center gap-3 px-3 py-3 rounded-sm border border-border text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-300"
+          className="group w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl
+            border border-border text-[11px] font-bold uppercase tracking-widest
+            text-muted-foreground hover:text-destructive hover:bg-destructive/10
+            hover:border-destructive/20 transition-all duration-300 font-mono"
         >
           <RiLogoutBoxRLine
-            size={18}
-            className="group-hover:-translate-x-1 transition-transform"
+            size={15}
+            className="group-hover:-translate-x-0.5 transition-transform duration-200"
           />
-          SIGN OUT
-        </button>
+          Sign Out
+        </motion.button>
       </div>
     </div>
   );
