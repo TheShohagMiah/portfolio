@@ -55,9 +55,9 @@
 
 **Your Name**
 - Portfolio: [your-portfolio-url.com](https://your-portfolio-url.com)
-- GitHub: [@your-username](https://github.com/your-username)
-- LinkedIn: [your-linkedin](https://linkedin.com/in/your-linkedin)
-- Email: your.email@example.com
+- GitHub: [@TheShohagMiah](https://github.com/TheShohagMiah/)
+- LinkedIn: [your-linkedin](https://www.linkedin.com/in/shohag-miah-a484a93b2/)
+- Email: shohagmiah7474@gmail.com
 
 ---
 
