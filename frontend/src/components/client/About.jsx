@@ -114,7 +114,7 @@ const StatCard = ({ label, value, unit, icon: Icon }) => (
   <motion.div
     whileHover={{ y: -5, scale: 1.02 }}
     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    className="group relative flex flex-col gap-3 p-5 rounded-2xl border transition-all duration-300 cursor-default overflow-hidden"
+    className="group relative flex flex-col gap-3 p-3 rounded-2xl border transition-all duration-300 cursor-default overflow-hidden"
     style={{ background: "var(--card)", borderColor: "var(--border)" }}
     onMouseEnter={(e) => {
       e.currentTarget.style.borderColor = "var(--brand-border)";
@@ -207,7 +207,7 @@ const About = () => {
   return (
     <section
       id="about"
-      className="py-28 bg-background overflow-hidden relative"
+      className="py-12 md:py-20 max-w-6xl mx-auto bg-background overflow-hidden relative"
     >
       {/* ── Ambient glows ──────────────────────────────────── */}
       <div

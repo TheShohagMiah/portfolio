@@ -233,7 +233,7 @@ const Contact = () => {
   return (
     <section
       id="contact"
-      className="py-24 bg-background relative overflow-hidden"
+      className="py-10 md:py-20 max-w-6xl mx-auto bg-background relative overflow-hidden"
     >
       {/* ── Ambient glows ──────────────────────────────────── */}
       <motion.div

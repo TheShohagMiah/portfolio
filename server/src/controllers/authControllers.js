@@ -2,133 +2,139 @@ import { sendEmail } from "../config/mailer.js";
 import User from "../models/auth/authModel.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// ── Cookie config ──────
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+// ── OTP Email Template ──────────────────────────────────────────
+const otpTemplate = (name, otp) => `
+  <div style="font-family: sans-serif; max-width: 400px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+    <h2 style="color: #333;">Welcome, ${name}!</h2>
+    <p style="color: #555; text-align: center;">Your verification code is:</p>
+    <div style="background: #f0f7ff; color: #007bff; font-size: 28px; font-weight: bold; text-align: center; padding: 15px; border-radius: 8px; letter-spacing: 4px;">
+      ${otp}
+    </div>
+    <p style="font-size: 12px; color: #999; margin-top: 20px;">
+      This code expires in 15 minutes. If you didn't sign up, please ignore this email.
+    </p>
+  </div>
+`;
+
+// ══════════════════════════════════════════════════════════════
+//  REGISTER
+// ══════════════════════════════════════════════════════════════
 export const userRegister = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
+  // ── Duplicate check ────────────────────────────────────────
   const userExist = await User.findOne({ email });
   if (userExist) {
     throw new ApiError(400, "User already exists.");
   }
 
-  // 1. Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // 2. Generate OTP and Expiry (15 minutes)
+  // ── OTP generate ───────────────────────────────────────────
   const otp = Math.floor(100000 + Math.random() * 900000);
   const otpExpiryDate = Date.now() + 15 * 60 * 1000;
 
-  // Inside userRegister or a separate mailer utility
-  const otpTemplate = (name, otp) => `
-  <div style="font-family: sans-serif; max-width: 400px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-    <h2 style="color: #333;">Welcome, ${fullName}!</h2>
-    <p style="color: #555; text-align: center; ">Your verification code is:</p>
-    <div style="background: #f0f7ff; color: #007bff; font-size: 28px; font-weight: bold; text-align: center; padding: 15px; border-radius: 8px; letter-spacing: 4px;">
-      ${otp}
-    </div>
-    <p style="font-size: 12px; color: #999; margin-top: 20px;">
-      This code expires in 15 minutes. If you didn't sign up for an account, please ignore this email.
-    </p>
-  </div>
-`;
-
-  try {
-    await sendEmail(email, "Verify Your Account", otpTemplate(fullName, otp));
-  } catch (error) {
-    // If email fails, you might want to delete the user or handle the error
-    console.error("Email failed to send", error);
-  }
-
+  // ── Create user ─────────────
   const user = await User.create({
     fullName,
     email,
-    password: hashedPassword,
+    password,
     otp,
     otpExpiryDate,
     role,
   });
-  // 3. Generate Token
+
+  // ── Send OTP email ─────────────────────────────────────────
+  try {
+    await sendEmail(email, "Verify Your Account", otpTemplate(fullName, otp));
+  } catch (error) {
+    console.error("OTP email failed to send:", error.message);
+  }
+
+  // ── JWT + Cookie ───────────────────────────────────────────
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
     expiresIn: "7d",
   });
 
-  // 4. Set Cookie
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // Matched to 7 days
+  res.cookie("token", token, cookieOptions);
+
+  res.status(201).json({
+    success: true,
+    message: "Registration successful. OTP sent to email.",
   });
-  res.status(200).json({ success: true, message: "OTP sent to email." });
 });
 
+// ══════════════════════════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════════════════════════
 export const userLogin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // 1. Find user
-  const user = await User.findOne({ email });
-
+  const user = await User.findOne({ email }).select("+password");
   if (!user) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  // 2. Check Password
+  // ── Password verify ────────────────────────────────────────
   const isPasswordMatch = await bcrypt.compare(password, user.password);
-
   if (!isPasswordMatch) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  // 3. CHECK VERIFICATION STATUS
-  // If they aren't verified, don't give them a token!
+  // ── Verification check ─────────────────────────────────────
   if (!user.isVerified) {
     throw new ApiError(403, "Please verify your email before logging in.");
   }
-  // 4. Generate Token
+
+  // ── JWT + Cookie ───────────────────────────────────────────
   const token = jwt.sign(
-    { id: user._id, role: user.role, name: user.name },
+    { id: user._id, role: user.role }, // ✅ name সরিয়ে দিলাম (unnecessary)
     process.env.JWT_SECRET_KEY,
-    {
-      expiresIn: "7d",
-    },
+    { expiresIn: "7d" },
   );
 
-  // 5. Set Cookie
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie("token", token, cookieOptions);
 
   return res.status(200).json({
     success: true,
     message: "Login successfully.",
     user: {
       id: user._id,
-      name: user.name,
+      fullName: user.fullName,
       email: user.email,
+      role: user.role,
     },
   });
 });
 
+// ══════════════════════════════════════════════════════════════
+//  LOGOUT
+// ══════════════════════════════════════════════════════════════
 export const userLogOut = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    samsite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   });
 
-  res.json({
+  res.status(200).json({
     success: true,
-    message: "User logout.",
+    message: "Logged out successfully.",
   });
 });
 
+// ══════════════════════════════════════════════════════════════
+//  VERIFY EMAIL
+// ══════════════════════════════════════════════════════════════
 export const verifyEmail = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { otp } = req.body;
@@ -142,6 +148,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  // ── Already verified ───────────────────────────────────────
   if (user.isVerified) {
     return res.status(200).json({
       success: true,
@@ -149,27 +156,23 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     });
   }
 
-  // 1. Check Expiry first
+  // ── Expiry check আগে ───────────────────────────────────────
   if (user.otpExpiryDate < Date.now()) {
     throw new ApiError(400, "OTP has expired. Please request a new one.");
   }
 
-  // 2. Validate OTP (String comparison to handle leading zeros)
-  // Ensure your Schema stores OTP as a String
+  // ── OTP match ──────────────────────────────────────────────
   if (user.otp !== String(otp)) {
-    // Optional: Increment failed attempts here
     throw new ApiError(400, "Invalid verification code");
   }
 
-  // 3. Update User State
+  // ── Update user ────────────────────────────────────────────
   user.isVerified = true;
-  user.otp = undefined; // Using undefined removes the field in MongoDB
+  user.otp = undefined;
   user.otpExpiryDate = undefined;
-
   await user.save();
 
-  // 4. Background Tasks (Email)
-  // We use a separate try-catch so email failure doesn't roll back verification
+  // ── Welcome email ──────────────────────────────────────────
   try {
     await sendEmail(
       user.email,
@@ -191,8 +194,48 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   });
 });
 
+// ══════════════════════════════════════════════════════════════
+//  UPDATE PASSWORD
+// ══════════════════════════════════════════════════════════════
+export const updatePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user.id).select("+password");
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully. Please login again.",
+    logout: true,
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+//  IS AUTHENTICATED
+// ══════════════════════════════════════════════════════════════
 export const isAuthenticated = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
   res.status(200).json({
     success: true,
     user,

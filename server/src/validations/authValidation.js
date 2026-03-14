@@ -26,12 +26,10 @@ export const registerSchema = loginSchema
 
     role: z
       .enum(["user", "admin", "moderator"], {
-        // Fixed the casing here from error_Map to errorMap
         errorMap: () => ({ message: "Invalid role selected" }),
       })
       .default("user"),
 
-    // Removed .optional() so the UI knows this must be filled
     confirmPassword: z.string({
       required_error: "Please confirm your password",
     }),
@@ -39,4 +37,27 @@ export const registerSchema = loginSchema
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
+  });
+
+// ── NEW ────────────────────────────────────────────────────────
+export const updatePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string({ required_error: "Current password is required" })
+      .min(1, "Current password cannot be empty"),
+
+    // loginSchema থেকে password rules reuse করো
+    newPassword: loginSchema.shape.password,
+
+    confirmPassword: z.string({
+      required_error: "Please confirm your new password",
+    }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from current password",
+    path: ["newPassword"],
   });

@@ -224,7 +224,7 @@ const Skills = () => {
   return (
     <section
       id="skills"
-      className="py-16 md:py-28 bg-background relative overflow-hidden"
+      className="py-10 md:py-20 bg-background relative overflow-hidden"
     >
       {/* ── Ambient glows ──────────────────────────────────── */}
       <div

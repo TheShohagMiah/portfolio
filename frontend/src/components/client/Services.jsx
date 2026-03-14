@@ -134,7 +134,7 @@ const Services = () => {
   return (
     <section
       id="services"
-      className="py-24 bg-background relative overflow-hidden"
+      className="py-10 md:py-20 bg-background relative overflow-hidden"
     >
       {/* ── Ambient glows ──────────────────────────────────── */}
       <div
@@ -179,17 +179,6 @@ const Services = () => {
                 </span>
               </h2>
             </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="text-muted-foreground max-w-xs text-sm leading-relaxed md:text-right"
-            >
-              Tailored development services designed to help businesses scale in
-              the modern web ecosystem.
-            </motion.p>
           </div>
 
           {/* ══ Bento Grid ════════════════════════════════════ */}

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -24,19 +25,11 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       trim: true,
       minlength: [8, "Password must be at least 8 characters."],
+      select: false,
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    otp: {
-      type: String,
-      default: null,
-    },
-    otpExpiryDate: {
-      type: Date,
-      default: null,
-    },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String, default: null },
+    otpExpiryDate: { type: Date, default: null },
     role: {
       type: String,
       enum: ["user", "admin", "moderator"],
@@ -46,6 +39,10 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const User = mongoose.model("User", userSchema);
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
+});
 
+const User = mongoose.model("User", userSchema);
 export default User;

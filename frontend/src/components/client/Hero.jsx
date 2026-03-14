@@ -184,7 +184,7 @@ const Hero = () => {
   if (!heroData) return null;
 
   // ── Derived data ─────────────────────────────────────────────
-  const words = heroData.title?.split(" ") ?? ["Hello", "World"];
+  const words = heroData.title?.split(" ") ?? ["Shohag", "Miah"];
   const firstWord = words[0];
   const restWords = words.slice(1).join(" ");
   const techStack = heroData.techStack?.length
@@ -222,13 +222,14 @@ const Hero = () => {
 
         {/* ── Title ─────────────────────────────────────────── */}
         <motion.div variants={item} className="space-y-4">
-          <h1 className="text-6xl md:text-[88px] font-black tracking-tight text-foreground leading-[1.0]">
+          <h1
+            style={{ color: "var(--brand)" }}
+            className="text-6xl md:text-[88px] font-black tracking-tight text-foreground leading-[1.0]"
+          >
             {firstWord}{" "}
             <span className="relative inline-block">
               {/* Italic serif word */}
-              <span className="text-muted-foreground italic font-serif font-light">
-                {restWords}
-              </span>
+              <span className="text-foreground ">{restWords}</span>
               {/* Underline SVG */}
               <motion.svg
                 viewBox="0 0 240 10"
@@ -267,7 +268,7 @@ const Hero = () => {
             />
             <h2
               className="text-base md:text-lg font-black tracking-[0.3em] uppercase font-mono"
-              style={{ color: "var(--brand)" }}
+              style={{ color: "var(--brand)", opacity: "60%" }}
             >
               {heroData.subTitle}
             </h2>

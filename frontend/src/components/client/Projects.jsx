@@ -97,7 +97,7 @@ const Projects = () => {
   return (
     <section
       id="projects"
-      className="py-24 md:py-32 bg-background relative overflow-hidden"
+      className="py-10 md:py-20 bg-background relative overflow-hidden"
     >
       {/* ── Ambient glows ──────────────────────────────────── */}
       <motion.div

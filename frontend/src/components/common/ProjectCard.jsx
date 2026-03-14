@@ -327,7 +327,7 @@ const ProjectCard = ({ project, index }) => {
 
             <div className="p-5 space-y-3.5">
               {/* Title */}
-              <h3 className="text-lg font-bold italic font-serif text-white leading-snug">
+              <h3 className="text-xl font-bold text-white leading-snug">
                 {title}
               </h3>
 

@@ -15,6 +15,7 @@ import contactRouter from "./routes/contactRoutes.js";
 import miscellaneousRouter from "./routes/miscellaneousRoutes.js";
 import visitorRouter from "./routes/visitorsRoutes.js";
 import skillsRouter from "./routes/skillsRoutes.js";
+import socialLinkRouter from "./routes/socialLinksRoutes.js";
 
 const app = express();
 
@@ -61,7 +62,7 @@ app.use("/api/contact", contactRouter);
 app.use("/api/miscellaneous", miscellaneousRouter);
 
 app.use("/api/visitors", visitorRouter);
-
+app.use("/api/social-links", socialLinkRouter);
 // --- 404 Handler ---
 app.use((req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
